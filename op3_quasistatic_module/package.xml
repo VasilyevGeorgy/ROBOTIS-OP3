@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>op3_quasistatic_module</name>
+  <version>0.2.1</version>
+  <description>
+    The op3_quasistatic_module package
+  </description>
+  <license>Apache 2.0</license>
+  <author email="kmjung@robotis.com">Kayman</author>
+  <maintainer email="vasilyev.georgy@gmail.com">LIRS</maintainer>
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>robotis_controller_msgs</depend>
+  <depend>cmake_modules</depend>
+  <depend>robotis_framework_common</depend>
+  <depend>robotis_device</depend>
+  <depend>robotis_math</depend>
+  <depend>op3_kinematics_dynamics</depend>
+  <depend>boost</depend>
+  <depend>eigen</depend>
+</package>
