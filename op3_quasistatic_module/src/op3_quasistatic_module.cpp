@@ -10,20 +10,9 @@ QuasistaticControlModule::QuasistaticControlModule()
     is_moving_(false),
     is_updated_(false),
     is_blocked_(false),
-    r_min_diff_(0.07),
-    l_min_diff_(0.07),
     tra_count_(0),
     tra_size_(0),
-    default_moving_time_(0.5),
-    default_moving_angle_(30),
     check_collision_(true),
-    moving_time_(3.0),
-    BASE_INDEX(0),
-    HEAD_INDEX(20),
-    RIGHT_END_EFFECTOR_INDEX(21),
-    RIGHT_ELBOW_INDEX(5),
-    LEFT_END_EFFECTOR_INDEX(22),
-    LEFT_ELBOW_INDEX(6),
     DEBUG(false)
 {
   enable_ = false;
@@ -69,7 +58,6 @@ void QuasistaticControlModule::initialize(const int control_cycle_msec, robotis_
   ros::NodeHandle rn;
   // publish topics
   status_msg_pub_ = rn.advertise<robotis_controller_msgs::StatusMsg>("/robotis/status", 1);
-  set_ctrl_module_pub_ = rn.advertise<std_msgs::String>("/robotis/enable_ctrl_module", 1);
 
 }
 
@@ -81,21 +69,41 @@ void QuasistaticControlModule::queueThread()
   rn.setCallbackQueue(&callback_queue);
 
   // subsribe to topics
-  ros::Subscriber set_joint_sub = rn.subscribe("/robotis/direct_control/set_joint_states", 1, &QuasistaticControlModule::setJointCallback, this);
+  //ros::Subscriber set_joint_sub = rn.subscribe("/robotis/direct_control/set_joint_states", 1, &QuasistaticControlModule::setJointCallback, this);
   ros::Subscriber step_params_sub = rn.subscribe("/robotis/quasistatic/step_params", 1, &QuasistaticControlModule::StepParamsCallback, this);
 
   ros::WallDuration duration(control_cycle_msec_ / 1000.0);
-  while(ros_node.ok())
+  while(rn.ok())
     callback_queue.callAvailable(duration);
 
 }
 
-void QuasistaticControlModule::setJointCallback(const sensor_msgs::JointState::ConstPtr &msg)
-{
+//void QuasistaticControlModule::setJointCallback(const sensor_msgs::JointState::ConstPtr &msg)
+//{
+//
+//}
 
-}
 void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_module_msgs::FootStepCommand::ConstPtr &msg)
 {
+  if (!enable_){
+
+    ROS_INFO_THROTTLE(1, "Quasistatic control module is not enable");
+    publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_ERROR, "Not Enable");
+    return;
+  }
+
+  // waiting for updating of present joint states
+  int waiting_count = 0;
+  while(!is_updated_)
+  {
+    usleep(control_cycle_msec_ * 1000);
+    if(++waiting_count > 100)
+    {
+      ROS_ERROR("Present joint states aren't updated!");
+      return;
+    }
+  }
+
   if(!is_moving_){
     // get step parameters from msg
     int num_of_steps = msg->step_num;
@@ -104,17 +112,21 @@ void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_modul
     double step_duration = msg->step_time;
     double step_clearance = msg->side_length;
 
-    if((num_of_steps > 0) && !init_leg.empty())
-    {
-      // set module of all joints -> this module
-      op3_quasistatic_locomotion::setModule(module_name_);
+    if((num_of_steps > 0) && !init_leg.empty()){
 
-      // wait for changing the module to quasistatic_module and getting the goal position
-      while (!enable_ || !is_updated_)
-        usleep(8 * 1000);
+      // set module of all joints -> this module'
+      //std::string module_name = getModuleName();
+      //QuasistaticControlModule::setModule(module_name_);
+      //!!! Try to set module thru publishing to 
+
+      //// wait for changing the module to quasistatic_module and getting the goal position
+      //while (!enable_ || !is_updated_)
+      //  usleep(8 * 1000);
 
       if(tra_size_ == 0) // (rleg_joint_angles_.size() == 0) || (lleg_joint_angles_.size() == 0)
       {
+        op3_quasistatic_locomotion locom;
+        op3_quasistatic_locomotion::stepParam sp;
         // fill step_param structure
         sp.num_of_steps = num_of_steps;
         sp.init_leg = init_leg;
@@ -142,8 +154,11 @@ void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_modul
 void QuasistaticControlModule::process(std::map<std::string, robotis_framework::Dynamixel *> dxls,
                                   std::map<std::string, double> sensors)
 {
+
   if (enable_ == false)
     return;
+
+  tra_lock_.lock();
 
   // get joint data from robot
   for (std::map<std::string, robotis_framework::DynamixelState *>::iterator state_it = result_.begin();
@@ -179,7 +194,6 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
 
       if (tra_count_ >= tra_size_) // end of steps
         finishMoving();
-
       else
       { // update goal position
         Eigen::VectorXd cur_val = rleg_joint_angles_.at(tra_count_);
@@ -209,6 +223,10 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
     }
   }
 
+  tra_lock_.unlock();
+
+  //usleep(5*1000);
+
   // set joint data to robot
   for (std::map<std::string, robotis_framework::DynamixelState *>::iterator state_it = result_.begin();
        state_it != result_.end(); state_it++)
@@ -225,16 +243,24 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
 
 void QuasistaticControlModule::stop()
 {
+  tra_lock_.lock();
+
+  if (is_moving_ == true)
+    stop_process_ = true;
+
+  tra_lock_.unlock();
 
 }
 
 bool QuasistaticControlModule::isRunning()
 {
-
+  return is_moving_;
 }
 
 void QuasistaticControlModule::onModuleEnable()
 {
+  is_updated_ = false;
+  is_blocked_ = false;
 
 }
 
@@ -245,16 +271,36 @@ void QuasistaticControlModule::onModuleDisable()
 
 void QuasistaticControlModule::startMoving()
 {
-
+  is_moving_ = true;
 }
 
 void QuasistaticControlModule::finishMoving()
 {
+  // init value
+  calc_joint_tra_ = goal_position_;
+  tra_size_ = 0;
+  tra_count_ = 0;
+  is_moving_ = false;
+
+  // log
+  publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_INFO, "Quasisitatic locomotion is finished.");
+  ROS_WARN("Quasistatic locomotion is finished");
+
+  setModule("none");
 
 }
 
 void QuasistaticControlModule::stopMoving()
 {
+  // init value
+  calc_joint_tra_ = goal_position_;
+  tra_size_ = 0;
+  tra_count_ = 0;
+  is_moving_ = false;
+  stop_process_ = false;
+
+  // log
+  publishStatusMsg(robotis_controller_msgs::StatusMsg::STATUS_WARN, "Stop Module.");
 
 }
 
@@ -263,8 +309,7 @@ void QuasistaticControlModule::jointTraGeneThread()
 
 }
 
-void QuasistaticControlModule::publishStatusMsg(unsigned int type, std::string msg)
-{
+void QuasistaticControlModule::publishStatusMsg(unsigned int type, std::string msg){
   ros::Time now = ros::Time::now();
 
   if(msg.compare(last_msg_) == 0)
@@ -285,4 +330,21 @@ void QuasistaticControlModule::publishStatusMsg(unsigned int type, std::string m
   last_msg_ = msg;
   last_msg_time_ = now;
 }
+
+void QuasistaticControlModule::setModule(const std::string &moduleName){
+
+  ros::NodeHandle rn;
+  ros::ServiceClient set_joint_module_client = rn.serviceClient<robotis_controller_msgs::SetModule>("/robotis/set_present_ctrl_modules");
+
+  robotis_controller_msgs::SetModule set_module_srv;
+  set_module_srv.request.module_name = moduleName;
+
+  if (set_joint_module_client.call(set_module_srv) == false)
+  {
+    ROS_WARN("Failed to set module");
+    return;
+  }
+
+}
+
 }

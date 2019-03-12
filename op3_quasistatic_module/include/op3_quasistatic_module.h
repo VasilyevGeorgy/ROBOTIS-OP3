@@ -14,8 +14,6 @@
 * limitations under the License.
 *******************************************************************************/
 
-/* Author: Kayman */
-
 #ifndef QUASISTATIC_CONTROL_MODULE_H_
 #define QUASISTATIC_CONTROL_MODULE_H_
 
@@ -64,13 +62,6 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
      Count
    };
 
-   const int BASE_INDEX;
-   const int HEAD_INDEX;
-   const int RIGHT_END_EFFECTOR_INDEX;
-   const int RIGHT_ELBOW_INDEX;
-   const int LEFT_END_EFFECTOR_INDEX;
-   const int LEFT_ELBOW_INDEX;
-
   /* ROS Topic Callback Functions */
   void setJointCallback(const sensor_msgs::JointState::ConstPtr &msg);
   void StepParamsCallback(const op3_online_walking_module_msgs::FootStepCommand::ConstPtr &msg);
@@ -102,7 +93,6 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
   boost::mutex tra_lock_;
 
   ros::Publisher status_msg_pub_;
-  ros::Publisher set_ctrl_module_pub_;
 
   const bool DEBUG;
   bool stop_process_;
@@ -132,10 +122,10 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
 
   OP3KinematicsDynamics *op3_kinematics_;
 
-  op3_quasistatic_locomotion locom;
-  op3_quasistatic_locomotion::stepParam sp;
   std::vector<Eigen::VectorXd> rleg_joint_angles_;
   std::vector<Eigen::VectorXd> lleg_joint_angles_;
+
+  void setModule(const std::string &moduleName);
 
 };
 

@@ -20,4 +20,5 @@
   <depend>op3_kinematics_dynamics</depend>
   <depend>boost</depend>
   <depend>eigen</depend>
+  <depend>op3_quasistatic_locomotion</depend>
 </package>

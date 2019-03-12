@@ -1,4 +1,4 @@
-#ifndef OP3_QUASISTATIC_LOCOMOTION_H
+﻿#ifndef OP3_QUASISTATIC_LOCOMOTION_H
 #define OP3_QUASISTATIC_LOCOMOTION_H
 
 #include <stdio.h>
@@ -46,8 +46,8 @@ gnome-terminal -e \"roslaunch op3_manager op3_gazebo.launch\" \
 //gnome-terminal -e "roslaunch op3_gazebo robotis_world.launch"
 
 const int JOINT_NUM = 6;
-const double D2R = M_PI/180.0;
-const double R2D = 180.0/M_PI;
+const double D2R_ = M_PI/180.0;
+const double R2D_ = 180.0/M_PI;
 const double y_offset = 0.035;
 const double deg_of_precision = 2*M_PI/pow(2.0,12); // XM430 servo' degree of precision in rads
 
@@ -86,7 +86,6 @@ public:
   void managerJointPos();
   void getJointPosition(Eigen::VectorXd &rleg_joint_position_,
                         Eigen::VectorXd &lleg_joint_position_);
-
 
 private:
   bool rostopic_is_init;
@@ -215,9 +214,8 @@ private:
   bool getCurrentModule(std::vector<std::string> &joint_name, std::vector<std::string> &joint_module);
   void setJointModule(const std::vector<std::string> &joint_name, const std::vector<std::string> &module_name); // service call to set module
   void setLegsModule(std::string moduleName); // Module for legs joints
-  void setModule(std::string moduleName); // Module for whole joints
 
-
+  void setModule(const std::string &moduleName); // Module for whole joints
 
 };
 

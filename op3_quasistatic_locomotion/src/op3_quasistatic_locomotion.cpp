@@ -135,13 +135,13 @@ void op3_quasistatic_locomotion::presStateCallback(const sensor_msgs::JointState
 {
 
   ROS_INFO("Right leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-           jnt_data->position[16]*R2D,jnt_data->position[15]*R2D,jnt_data->position[14]*R2D,
-           jnt_data->position[17]*R2D,jnt_data->position[11]*R2D,jnt_data->position[12]*R2D
+           jnt_data->position[16]*R2D_,jnt_data->position[15]*R2D_,jnt_data->position[14]*R2D_,
+           jnt_data->position[17]*R2D_,jnt_data->position[11]*R2D_,jnt_data->position[12]*R2D_
            );
 
   ROS_INFO("Left leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-           jnt_data->position[7]*R2D,jnt_data->position[6]*R2D,jnt_data->position[5]*R2D,
-           jnt_data->position[8]*R2D,jnt_data->position[2]*R2D,jnt_data->position[3]*R2D
+           jnt_data->position[7]*R2D_,jnt_data->position[6]*R2D_,jnt_data->position[5]*R2D_,
+           jnt_data->position[8]*R2D_,jnt_data->position[2]*R2D_,jnt_data->position[3]*R2D_
            );
 
   for (int i=0; i<20; i++){
@@ -243,15 +243,15 @@ void op3_quasistatic_locomotion::initialization(KDL::Frame pelvis_pose){
   for (int i=0; i<JOINT_NUM; i++)
   {
     //std::cout<<i<<std::endl;
-    rleg_min_pos_limit(i) = rleg_min_pos_limit_[i]*D2R; //D2R - degrees to radians
-    rleg_max_pos_limit(i) = rleg_max_pos_limit_[i]*D2R;
+    rleg_min_pos_limit(i) = rleg_min_pos_limit_[i]*D2R_; //D2R - degrees to radians
+    rleg_max_pos_limit(i) = rleg_max_pos_limit_[i]*D2R_;
     //ROS_INFO("joint [%d] max: %f", i, max_joint_pos_limit(i));
 
-    lleg_min_pos_limit(i) = lleg_min_pos_limit_[i]*D2R; //D2R - degrees to radians
-    lleg_max_pos_limit(i) = lleg_max_pos_limit_[i]*D2R;
+    lleg_min_pos_limit(i) = lleg_min_pos_limit_[i]*D2R_; //D2R - degrees to radians
+    lleg_max_pos_limit(i) = lleg_max_pos_limit_[i]*D2R_;
 
     //ROS_INFO("lleg_min_pos_limit(%d): %f;   lleg_max_pos_limit(%d): %f",
-    //         i,lleg_min_pos_limit(i)*R2D,i,lleg_max_pos_limit(i)*R2D);
+    //         i,lleg_min_pos_limit(i)*R2D_,i,lleg_max_pos_limit(i)*R2D_);
 
   }
 
@@ -312,7 +312,6 @@ bool op3_quasistatic_locomotion::moveFoot(KDL::Frame foot_des_pose, Eigen::Vecto
   std::transform(legType.begin(),legType.end(),legType.begin(), ::tolower);
   int ik_error = 0;
 
-  bool skip_value = false;
   if (legType == "right"){
 
     KDL::JntArray rleg_des_joint_pos;
@@ -325,29 +324,17 @@ bool op3_quasistatic_locomotion::moveFoot(KDL::Frame foot_des_pose, Eigen::Vecto
       return false;
     }
     else {
-      for (int i=2; i<JOINT_NUM-1; i++){ // pitch joints
-        if (fabs(rleg_joint_pos(i)-rleg_des_joint_pos(i)) < deg_of_precision)
-          skip_value = true;
+      for (int i=0; i<JOINT_NUM; i++){
+        leg_des_joint_pos_(i) = rleg_des_joint_pos(i);
       }
 
-      if (!skip_value){
-        for (int i=0; i<JOINT_NUM; i++){
-          leg_des_joint_pos_(i) = rleg_des_joint_pos(i);
-        }
-        ROS_INFO("Right leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-                 leg_des_joint_pos_(0)*R2D,leg_des_joint_pos_(1)*R2D,leg_des_joint_pos_(2)*R2D,
-                 leg_des_joint_pos_(3)*R2D,leg_des_joint_pos_(4)*R2D,leg_des_joint_pos_(5)*R2D
-                 );
-      }
-      else{
-        for (int i=0; i<JOINT_NUM; i++){
-          leg_des_joint_pos_(i) = rleg_joint_pos(i);
-        }
-        //ROS_INFO("value is skipped");
+      ROS_INFO("Right leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
+               leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
+               leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
+               );
       }
 
       return true;
-    }
 
   }
   else{
@@ -363,35 +350,22 @@ bool op3_quasistatic_locomotion::moveFoot(KDL::Frame foot_des_pose, Eigen::Vecto
         return false;
       }
       else{
-        for (int i=2; i<JOINT_NUM-1; i++){
-          if (fabs(lleg_joint_pos(i)-lleg_des_joint_pos(i)) < deg_of_precision)
-            skip_value = true;
+        for (int i=0; i<JOINT_NUM; i++){
+          leg_des_joint_pos_(i) = lleg_des_joint_pos(i);
         }
 
-        if (!skip_value){
-          for (int i=0; i<JOINT_NUM; i++){
-            leg_des_joint_pos_(i) = lleg_des_joint_pos(i);
-          }
-          ROS_INFO("Left leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-                   leg_des_joint_pos_(0)*R2D,leg_des_joint_pos_(1)*R2D,leg_des_joint_pos_(2)*R2D,
-                   leg_des_joint_pos_(3)*R2D,leg_des_joint_pos_(4)*R2D,leg_des_joint_pos_(5)*R2D
-                   );
-        }
-        else{
-          for (int i=0; i<JOINT_NUM; i++){
-            leg_des_joint_pos_(i) = lleg_joint_pos(i);
-          }
-          //ROS_INFO("value is skipped");
+        ROS_INFO("Left leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
+                 leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
+                 leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
+                 );
         }
 
         return true;
-      }
-    }
-    else{
-      ROS_WARN("moveFoot: INCORRECT LEG INPUT");
-      return false;
     }
   }
+
+  ROS_WARN("moveFoot: INCORRECT LEG INPUT");
+  return false;
 
 }
 
@@ -432,29 +406,18 @@ bool op3_quasistatic_locomotion::movePelvis(KDL::Frame pelvis_des_pose, Eigen::V
     }
     else {
 
-      for (int i=2; i<JOINT_NUM-1; i++){
-        if (fabs(rleg_joint_pos(i)-rleg_des_joint_pos(i)) < deg_of_precision)
-          skip_value = true;
+      for (int i=0; i<JOINT_NUM; i++){
+        leg_des_joint_pos_(i) = rleg_des_joint_pos(i);
       }
 
-      if (!skip_value){
-        for (int i=0; i<JOINT_NUM; i++){
-          leg_des_joint_pos_(i) = rleg_des_joint_pos(i);
-        }
-        ROS_INFO("Right leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-                 leg_des_joint_pos_(0)*R2D,leg_des_joint_pos_(1)*R2D,leg_des_joint_pos_(2)*R2D,
-                 leg_des_joint_pos_(3)*R2D,leg_des_joint_pos_(4)*R2D,leg_des_joint_pos_(5)*R2D
-                 );
-      }
-      else{
-        for (int i=0; i<JOINT_NUM; i++){
-          leg_des_joint_pos_(i) = rleg_joint_pos(i);
-        }
-        //ROS_INFO("value is skipped");
+      ROS_INFO("Right leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
+               leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
+               leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
+               );
       }
 
       return true;
-    }
+
   }
   else{
     if(legType == "left"){
@@ -474,37 +437,25 @@ bool op3_quasistatic_locomotion::movePelvis(KDL::Frame pelvis_des_pose, Eigen::V
       }
       else {
 
-        for (int i=2; i<JOINT_NUM-1; i++){
-          if (fabs(lleg_joint_pos(i)-lleg_des_joint_pos(i)) < deg_of_precision)
-            skip_value = true;
+        for (int i=0; i<JOINT_NUM; i++){
+          leg_des_joint_pos_(i) = lleg_des_joint_pos(i);
         }
 
-        if (!skip_value){
-          for (int i=0; i<JOINT_NUM; i++){
-            leg_des_joint_pos_(i) = lleg_des_joint_pos(i);
-          }
-          ROS_INFO("Left leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-                   leg_des_joint_pos_(0)*R2D,leg_des_joint_pos_(1)*R2D,leg_des_joint_pos_(2)*R2D,
-                   leg_des_joint_pos_(3)*R2D,leg_des_joint_pos_(4)*R2D,leg_des_joint_pos_(5)*R2D
-                   );
-        }
-        else{
-          for (int i=0; i<JOINT_NUM; i++){
-            leg_des_joint_pos_(i) = lleg_joint_pos(i);
-          }
-          //ROS_INFO("value is skipped");
+        ROS_INFO("Left leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
+                 leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
+                 leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
+                 );
         }
 
         return true;
       }
     }
-    else{
-      ROS_WARN("movePelvis: INCORRECT LEG INPUT");
-      return false;
-    }
-  }
+
+  ROS_WARN("movePelvis: INCORRECT LEG INPUT");
+  return false;
 
 }
+
 
 bool op3_quasistatic_locomotion::footTrajectoryGeneration(std::vector<KDL::Frame> &foot_poses, stepParam sp, std::string legType){
 
@@ -624,9 +575,9 @@ void op3_quasistatic_locomotion::goToInitialPose(KDL::Frame pelvis_des_pose, ste
   //ROS_INFO("Test1");
   this->managerJointPos();
 
-  this->initializeROS();
-  if (!rostopic_is_init)
-    return;
+  //this->initializeROS();
+  //if (!rostopic_is_init)
+  //  return;
 
   if (!this->getFeetPose()){
     return;
@@ -909,8 +860,8 @@ void op3_quasistatic_locomotion::quasiStaticPlaner(KDL::Frame pelvis_des_pose, s
   //Set initial Pose
   this->goToInitialPose(pelvis_des_pose, sp);
 
-  if (!rostopic_is_init)
-    return;
+  //if (!rostopic_is_init)
+  //  return;
 
   std::string init_leg = sp.init_leg;
 
@@ -964,7 +915,8 @@ void op3_quasistatic_locomotion::locomotion(stepParam sp){
 
   //ROS_INFO("Test9");
 
-  if(!rostopic_is_init)
+  this->initializeROS();
+  if (!rostopic_is_init)
     return;
 
   ros::Subscriber control_sub = node.subscribe("/op3_keyboard_control",
@@ -1103,7 +1055,7 @@ void op3_quasistatic_locomotion::setLegsModule(std::string moduleName){
   //return true;
 }
 
-void op3_quasistatic_locomotion::setModule(std::string moduleName){
+void op3_quasistatic_locomotion::setModule(const std::string &moduleName){
 
   ros::ServiceClient set_joint_module_client = node.serviceClient<robotis_controller_msgs::SetModule>("/robotis/set_present_ctrl_modules");
 

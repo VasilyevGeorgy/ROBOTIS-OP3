@@ -34,6 +34,7 @@
 #include "op3_direct_control_module/direct_control_module.h"
 #include "op3_online_walking_module/online_walking_module.h"
 #include "op3_tuning_module/tuning_module.h"
+#include "../../op3_quasistatic_module/include/op3_quasistatic_module.h"
 
 using namespace robotis_framework;
 using namespace dynamixel;
@@ -246,6 +247,7 @@ int main(int argc, char **argv)
   controller->addMotionModule((MotionModule*) DirectControlModule::getInstance());
   controller->addMotionModule((MotionModule*) OnlineWalkingModule::getInstance());
   controller->addMotionModule((MotionModule*) TuningModule::getInstance());
+  controller->addMotionModule((MotionModule*) QuasistaticControlModule::getInstance());
 
   // start timer
   controller->startTimer();

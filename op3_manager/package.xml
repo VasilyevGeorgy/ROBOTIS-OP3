@@ -35,5 +35,6 @@
   <depend>op3_online_walking_module</depend>
   <depend>op3_tuning_module</depend>
   <depend>op3_tuning_module_msgs</depend>
+  <depend>op3_quasistatic_module</depend>
   <exec_depend>op3_localization</exec_depend>
 </package>
