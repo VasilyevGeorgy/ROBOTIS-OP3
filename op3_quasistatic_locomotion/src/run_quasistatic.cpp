@@ -18,10 +18,11 @@ int main(int argc, char **argv){
   param_msg.step_num    = 10;
   param_msg.start_leg   = "right";
   param_msg.step_length = 30.0;
-  param_msg.step_time   = 2.0;
+  param_msg.step_time   = 4.0;
   param_msg.side_length = 20.0;
 
   ros::Rate freq(1000);
+  ROS_INFO("Start quasistatic locomotion!");
 
   while(ros::ok()){
 

@@ -203,7 +203,7 @@ private:
 
   void setJointPosition(Eigen::VectorXd rleg_joint_position_, Eigen::VectorXd lleg_joint_position_);
   bool getFeetPose();
-  bool moveFoot(KDL::Frame foot_des_pose, Eigen::VectorXd &leg_des_joint_pos_, std::string legType);
+  bool solveIK(KDL::Frame foot_des_pose, Eigen::VectorXd &leg_des_joint_pos_, std::string legType);
   bool movePelvis(KDL::Frame leg_des_pose, Eigen::VectorXd &leg_des_joint_pos_, std::string legType);
   bool footTrajectoryGeneration(std::vector<KDL::Frame> &foot_poses, stepParam sp, std::string legType);
   void initCoMTranslation(std::string legType, stepParam sp);

@@ -68,8 +68,6 @@ void QuasistaticControlModule::queueThread()
 
   rn.setCallbackQueue(&callback_queue);
 
-  // subsribe to topics
-  //ros::Subscriber set_joint_sub = rn.subscribe("/robotis/direct_control/set_joint_states", 1, &QuasistaticControlModule::setJointCallback, this);
   ros::Subscriber step_params_sub = rn.subscribe("/robotis/quasistatic/step_params", 1, &QuasistaticControlModule::StepParamsCallback, this);
 
   ros::WallDuration duration(control_cycle_msec_ / 1000.0);
@@ -77,11 +75,6 @@ void QuasistaticControlModule::queueThread()
     callback_queue.callAvailable(duration);
 
 }
-
-//void QuasistaticControlModule::setJointCallback(const sensor_msgs::JointState::ConstPtr &msg)
-//{
-//
-//}
 
 void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_module_msgs::FootStepCommand::ConstPtr &msg)
 {
@@ -114,26 +107,17 @@ void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_modul
 
     if((num_of_steps > 0) && !init_leg.empty()){
 
-      // set module of all joints -> this module'
-      //std::string module_name = getModuleName();
-      //QuasistaticControlModule::setModule(module_name_);
-      //!!! Try to set module thru publishing to 
-
-      //// wait for changing the module to quasistatic_module and getting the goal position
-      //while (!enable_ || !is_updated_)
-      //  usleep(8 * 1000);
-
       if(tra_size_ == 0) // (rleg_joint_angles_.size() == 0) || (lleg_joint_angles_.size() == 0)
       {
         op3_quasistatic_locomotion locom;
-        op3_quasistatic_locomotion::stepParam sp;
+
         // fill step_param structure
         sp.num_of_steps = num_of_steps;
         sp.init_leg = init_leg;
         sp.step_length = step_length;
         sp.step_duration = step_duration;
         sp.step_clearance = step_clearance;
-        sp.freq = control_cycle_msec_; // ???
+        sp.freq = int(1000/control_cycle_msec_); // control_cycle = 8 msec
 
         // pelvis pose while locomotion
         KDL::Frame goalPose = KDL::Frame(KDL::Rotation::RPY(0.0,0.0,0.0),
@@ -146,8 +130,8 @@ void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_modul
       }
     }
   }
-  else
-    ROS_INFO("Previous process is still active");
+  //else
+  //  ROS_INFO("Previous process is still active");
 
 }
 
@@ -218,14 +202,13 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
         goal_position_.coeffRef(0,3) = cur_val(5);
 
         tra_count_++;
-
       }
     }
   }
 
   tra_lock_.unlock();
 
-  //usleep(5*1000);
+  usleep(1000);
 
   // set joint data to robot
   for (std::map<std::string, robotis_framework::DynamixelState *>::iterator state_it = result_.begin();

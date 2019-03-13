@@ -63,7 +63,6 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
    };
 
   /* ROS Topic Callback Functions */
-  void setJointCallback(const sensor_msgs::JointState::ConstPtr &msg);
   void StepParamsCallback(const op3_online_walking_module_msgs::FootStepCommand::ConstPtr &msg);
 
   void queueThread();
@@ -75,13 +74,9 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
 
   void publishStatusMsg(unsigned int type, std::string msg);
 
-  Eigen::MatrixXd calcMinimumJerkTraPVA(double pos_start, double vel_start, double accel_start, double pos_end,
-                                        double vel_end, double accel_end, double smp_time, double mov_time);
-
   std::map<std::string, bool> collision_;
 
   bool checkSelfCollision();
-  bool getDiff(OP3KinematicsDynamics *kinematics, int end_index, int base_index, double &diff);
 
   double default_moving_time_;
   double default_moving_angle_;
@@ -102,7 +97,6 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
   bool will_be_collision_;
   int tra_count_, tra_size_;
   double moving_time_;
-  double r_min_diff_, l_min_diff_;
 
   Eigen::MatrixXd target_position_;
   Eigen::MatrixXd present_position_;
@@ -126,6 +120,7 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
   std::vector<Eigen::VectorXd> lleg_joint_angles_;
 
   void setModule(const std::string &moduleName);
+  op3_quasistatic_locomotion::stepParam sp;
 
 };
 

@@ -116,7 +116,6 @@ void op3_quasistatic_locomotion::initializeROS(){
 
 void op3_quasistatic_locomotion::managerJointPos(){
   present_joint_states_sub = node.subscribe("/robotis/present_joint_states",1000, &op3_quasistatic_locomotion::presStateCallback, this);
-  //ROS_INFO("CALLBACK TEST 0!");
 
   ros::Rate rate = 1000;
 
@@ -307,7 +306,7 @@ bool op3_quasistatic_locomotion::getFeetPose(){
 
 }
 
-bool op3_quasistatic_locomotion::moveFoot(KDL::Frame foot_des_pose, Eigen::VectorXd &leg_des_joint_pos_, std::string legType){
+bool op3_quasistatic_locomotion::solveIK(KDL::Frame foot_des_pose, Eigen::VectorXd &leg_des_joint_pos_, std::string legType){
 
   std::transform(legType.begin(),legType.end(),legType.begin(), ::tolower);
   int ik_error = 0;
@@ -364,7 +363,7 @@ bool op3_quasistatic_locomotion::moveFoot(KDL::Frame foot_des_pose, Eigen::Vecto
     }
   }
 
-  ROS_WARN("moveFoot: INCORRECT LEG INPUT");
+  ROS_WARN("solveIK: INCORRECT LEG INPUT");
   return false;
 
 }
@@ -410,10 +409,10 @@ bool op3_quasistatic_locomotion::movePelvis(KDL::Frame pelvis_des_pose, Eigen::V
         leg_des_joint_pos_(i) = rleg_des_joint_pos(i);
       }
 
-      ROS_INFO("Right leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-               leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
-               leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
-               );
+      //ROS_INFO("Right leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
+      //         leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
+      //         leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
+      //         );
       }
 
       return true;
@@ -441,10 +440,10 @@ bool op3_quasistatic_locomotion::movePelvis(KDL::Frame pelvis_des_pose, Eigen::V
           leg_des_joint_pos_(i) = lleg_des_joint_pos(i);
         }
 
-        ROS_INFO("Left leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
-                 leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
-                 leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
-                 );
+        //ROS_INFO("Left leg (deg) hip_yaw:%f, hip_r:%f, hip_p:%f, kn_p:%f, an_p :%f, an_r:%f",
+        //         leg_des_joint_pos_(0)*R2D_,leg_des_joint_pos_(1)*R2D_,leg_des_joint_pos_(2)*R2D_,
+        //         leg_des_joint_pos_(3)*R2D_,leg_des_joint_pos_(4)*R2D_,leg_des_joint_pos_(5)*R2D_
+        //         );
         }
 
         return true;
@@ -459,7 +458,10 @@ bool op3_quasistatic_locomotion::movePelvis(KDL::Frame pelvis_des_pose, Eigen::V
 
 bool op3_quasistatic_locomotion::footTrajectoryGeneration(std::vector<KDL::Frame> &foot_poses, stepParam sp, std::string legType){
 
-  int n_step = int (sp.freq*sp.step_duration);
+  /// Foot translation: Frames -> Joint angles
+  /// Phase duration: 0.5 * step_period
+
+  int n_step = int (sp.freq*sp.step_duration*0.5);
   up_part = 0.25;
   down_part = 0.25; //up_part + down_part <= 1
 
@@ -564,7 +566,7 @@ void op3_quasistatic_locomotion::goToInitialPose(KDL::Frame pelvis_des_pose, ste
                     KDL::Vector(0.0,0.0,0.3697) // z - max height
                        );
 
-  // Fake initialization just to get Pelvis pose
+  // Fake initialization just for get Pelvis pose
   this->initialization(pelvis_pose);
 
   Eigen::VectorXd rleg_joint_pos_;
@@ -572,23 +574,20 @@ void op3_quasistatic_locomotion::goToInitialPose(KDL::Frame pelvis_des_pose, ste
   rleg_joint_pos_.resize(JOINT_NUM);
   lleg_joint_pos_.resize(JOINT_NUM);
 
-  //ROS_INFO("Test1");
   this->managerJointPos();
 
-  //this->initializeROS();
-  //if (!rostopic_is_init)
-  //  return;
-
+  // get feet coordinates wrt ground plane
+  // if chains start at default pelvis pose (height: 0.3697)
   if (!this->getFeetPose()){
     return;
   }
-  //Get foot orrientation
+  //Get foot orientation
   double roll,pitch,yaw;
   rfoot_pose.M.GetRPY(roll,pitch,yaw);
 
-  // Pelvis pose after op3_manager launch
+  // resolve pelvis actual pose
   pelvis_pose = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
-                           KDL::Vector(-rfoot_pose.p.x(), 0.0, 0.3697-rfoot_pose.p.z())
+                           KDL::Vector(0.0, 0.0, 0.3697-rfoot_pose.p.z()) // x = -rfoot_pose.p.x()
                            );
 
   ROS_INFO("Pelvis position x:%f, y:%f, z:%f",pelvis_pose.p.x(),pelvis_pose.p.y(),pelvis_pose.p.z());
@@ -597,9 +596,7 @@ void op3_quasistatic_locomotion::goToInitialPose(KDL::Frame pelvis_des_pose, ste
   this->deleteSolvers();
   this->deleteChains();
 
-  //ROS_INFO("Test3");
-
-  // true initialization
+  // actual pelvis pose' initialization
   this->initialization(pelvis_pose);
   if (!this->getFeetPose()){
     return;
@@ -609,7 +606,7 @@ void op3_quasistatic_locomotion::goToInitialPose(KDL::Frame pelvis_des_pose, ste
 
   //ROS_INFO("Test4");
 
-  double time = 5; // in sec
+  double time = sp.step_duration; // in sec
   int numOfSteps = int (sp.freq*time);
 
   double des_roll, des_pitch, des_yaw;
@@ -760,18 +757,16 @@ void op3_quasistatic_locomotion::footTranslation(stepParam sp, std::string legTy
   ROS_INFO("Right foot x:%f, y:%f, z:%f",rfoot_pose.p.x(),rfoot_pose.p.y(),rfoot_pose.p.z());
   ROS_INFO(" Left foot x:%f, y:%f, z:%f",lfoot_pose.p.x(),lfoot_pose.p.y(),lfoot_pose.p.z());
 
-  //ros::Rate rate(sp.freq);
-  int n_step = int (sp.freq*sp.step_duration);
   std::vector<KDL::Frame> foot_poses;
 
   this->footTrajectoryGeneration(foot_poses, sp, legType);
 
-  for(int i=0; i<n_step; i++){
+  for(int i=0; i<foot_poses.size(); i++){
 
     if (legType == "right")
-      this->moveFoot(foot_poses.at(i), rleg_joint_pos_, legType);
+      this->solveIK(foot_poses.at(i), rleg_joint_pos_, legType);
     if (legType == "left")
-      this->moveFoot(foot_poses.at(i), lleg_joint_pos_, legType);
+      this->solveIK(foot_poses.at(i), lleg_joint_pos_, legType);
 
     rleg_joint_angles.push_back(rleg_joint_pos_);
     lleg_joint_angles.push_back(lleg_joint_pos_);
@@ -783,6 +778,9 @@ void op3_quasistatic_locomotion::footTranslation(stepParam sp, std::string legTy
 }
 
 void op3_quasistatic_locomotion::translateCoM(std::string legType, stepParam sp){
+
+  /// CoM Translation: Frames -> Joint angles
+  /// Phase duration: 0.5 * step_period
 
   Eigen::VectorXd rleg_joint_pos_;
   Eigen::VectorXd lleg_joint_pos_;
@@ -821,7 +819,7 @@ void op3_quasistatic_locomotion::translateCoM(std::string legType, stepParam sp)
 
   KDL::Frame pos = pelvis_pose;
 
-  double transl_time = 3.0; // 5 sec
+  double transl_time = sp.step_duration*0.5;
   int numOfSteps = int (transl_time*sp.freq);
 
   double dx = (des_pose.p.x()-pelvis_pose.p.x())/numOfSteps;
