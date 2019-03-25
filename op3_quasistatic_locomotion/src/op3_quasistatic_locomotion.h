@@ -87,6 +87,8 @@ public:
   void getJointPosition(Eigen::VectorXd &rleg_joint_position_,
                         Eigen::VectorXd &lleg_joint_position_);
 
+  void getPhases(std::vector<int> &ph_vec);
+
 private:
   bool rostopic_is_init;
   //Trajectory and Joint angles' vectors
@@ -95,6 +97,15 @@ private:
   //std::vector<KDL::Frame> pelivis_poses;
   std::vector<Eigen::VectorXd> rleg_joint_angles;
   std::vector<Eigen::VectorXd> lleg_joint_angles;
+
+  enum phase{
+    INIT_POSE,
+    INIT_COM_TRANSL,
+    FOOT_TRANSL,
+    COM_TRANSL
+  };
+
+  std::vector<int> phases;
   bool keyboard_run;
   bool keyboard_quit;
 

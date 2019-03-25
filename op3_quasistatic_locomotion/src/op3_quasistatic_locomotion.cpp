@@ -1,5 +1,6 @@
 #include "op3_quasistatic_locomotion.h"
 
+
 op3_quasistatic_locomotion::op3_quasistatic_locomotion()
 {
 
@@ -641,23 +642,18 @@ void op3_quasistatic_locomotion::goToInitialPose(KDL::Frame pelvis_des_pose, ste
 
     this->setJointPosition(rleg_joint_pos_, lleg_joint_pos_);
 
+    phases.push_back(INIT_POSE);
+
   }
 
   pelvis_pose = pos;
 
-  ROS_INFO("Test5");
-
   this->deleteSolvers();
   this->deleteChains();
-
-  ROS_INFO("Test6");
-
 
 }
 
 void op3_quasistatic_locomotion::initCoMTranslation(std::string legType, stepParam sp){
-
-  //ROS_INFO("Test7");
 
   double y_val = 0.0;
 
@@ -699,7 +695,6 @@ void op3_quasistatic_locomotion::initCoMTranslation(std::string legType, stepPar
   KDL::Frame pelvis_des_pose = pelvis_pose;
   pelvis_des_pose.p.data[1]+= y_val;
 
-  //ros::Rate rate(sp.freq);
   double transl_time = 2.0; // sec
   int numOfSteps = int (transl_time*sp.freq);
 
@@ -715,6 +710,8 @@ void op3_quasistatic_locomotion::initCoMTranslation(std::string legType, stepPar
     lleg_joint_angles.push_back(lleg_joint_pos_);
 
     this->setJointPosition(rleg_joint_pos_, lleg_joint_pos_);
+
+    phases.push_back(INIT_COM_TRANSL);
 
   }
 
@@ -772,6 +769,8 @@ void op3_quasistatic_locomotion::footTranslation(stepParam sp, std::string legTy
     lleg_joint_angles.push_back(lleg_joint_pos_);
 
     this->setJointPosition(rleg_joint_pos_, lleg_joint_pos_);
+
+    phases.push_back(FOOT_TRANSL);
 
   }
 
@@ -836,6 +835,8 @@ void op3_quasistatic_locomotion::translateCoM(std::string legType, stepParam sp)
     lleg_joint_angles.push_back(lleg_joint_pos_);
 
     this->setJointPosition(rleg_joint_pos_, lleg_joint_pos_);
+
+    phases.push_back(COM_TRANSL);
 
   }
 
@@ -1002,22 +1003,6 @@ void op3_quasistatic_locomotion::setJointModule(const std::vector<std::string> &
 
 void op3_quasistatic_locomotion::setLegsModule(std::string moduleName){
 
-  //std::transform(moduleName.begin(),moduleName.end(),moduleName.begin(), ::tolower);
-  //
-  //std::string module;
-  //
-  //if((moduleName == "directcontrolmodule")||(moduleName == "directcontrol"))
-  //  module = "direct_control_module";
-  //else{
-  //  if(moduleName == "none")
-  //    module = "none";
-  //  else{
-  //    ROS_WARN("Wrong control module!");
-  //    ROS_WARN("Exit...");
-  //    return false;
-  //  }
-  //}
-
   std::string module = moduleName;
 
   std::vector<std::string> joint_name;
@@ -1066,4 +1051,9 @@ void op3_quasistatic_locomotion::setModule(const std::string &moduleName){
     return;
   }
 
+}
+
+void op3_quasistatic_locomotion::getPhases(std::vector<int> &ph_vec){
+  std::copy(phases.begin(), phases.end(), std::back_inserter(ph_vec));
+  //ph_vec.insert(std::end(ph_vec), std::begin(phases), std::end(phases));
 }

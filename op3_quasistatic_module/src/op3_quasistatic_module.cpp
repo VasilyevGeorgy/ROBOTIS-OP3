@@ -58,6 +58,7 @@ void QuasistaticControlModule::initialize(const int control_cycle_msec, robotis_
   ros::NodeHandle rn;
   // publish topics
   status_msg_pub_ = rn.advertise<robotis_controller_msgs::StatusMsg>("/robotis/status", 1);
+  phase_pub_      = rn.advertise<std_msgs::Float64>("/robotis/walking_phase",1);
 
 }
 
@@ -125,13 +126,14 @@ void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_modul
         // Calculate angles
         locom.quasiStaticPlaner(goalPose, sp);
         locom.getAnglesVectors(rleg_joint_angles_, lleg_joint_angles_);
+        locom.getPhases(phases_);
 
+        //ROS_INFO("Phases len:%lu", phases_.size());
         tra_size_ = rleg_joint_angles_.size();
+        //ROS_INFO("tra_size: %d", tra_size_);
       }
     }
   }
-  //else
-  //  ROS_INFO("Previous process is still active");
 
 }
 
@@ -182,24 +184,24 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
       { // update goal position
         Eigen::VectorXd cur_val = rleg_joint_angles_.at(tra_count_);
 
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //! check numbers' correctness !!!!!!!!!!!
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        goal_position_.coeffRef(0,16) = cur_val(0);
-        goal_position_.coeffRef(0,15) = cur_val(1);
-        goal_position_.coeffRef(0,14) = cur_val(2);
-        goal_position_.coeffRef(0,17) = cur_val(3);
-        goal_position_.coeffRef(0,11) = cur_val(4);
-        goal_position_.coeffRef(0,12) = cur_val(5);
+        goal_position_.coeffRef(0,16) = cur_val(0); // r_hip_yaw
+        goal_position_.coeffRef(0,15) = cur_val(1); // r_hip_roll
+        goal_position_.coeffRef(0,14) = cur_val(2); // r_hip_pitch
+        goal_position_.coeffRef(0,17) = cur_val(3); // r_knee_pitch
+        goal_position_.coeffRef(0,11) = cur_val(4); // r_ankle_pitch
+        goal_position_.coeffRef(0,12) = cur_val(5); // r_ankle_roll
 
         cur_val = lleg_joint_angles_.at(tra_count_);
-        goal_position_.coeffRef(0,7) = cur_val(0);
-        goal_position_.coeffRef(0,6) = cur_val(1);
-        goal_position_.coeffRef(0,5) = cur_val(2);
-        goal_position_.coeffRef(0,8) = cur_val(3);
-        goal_position_.coeffRef(0,2) = cur_val(4);
-        goal_position_.coeffRef(0,3) = cur_val(5);
+        goal_position_.coeffRef(0,7) = cur_val(0);  // l_hip_yaw
+        goal_position_.coeffRef(0,6) = cur_val(1);  // l_hip_roll
+        goal_position_.coeffRef(0,5) = cur_val(2);  // l_hip_pitch
+        goal_position_.coeffRef(0,8) = cur_val(3);  // l_knee_pitch
+        goal_position_.coeffRef(0,2) = cur_val(4);  // l_ankle_pitch
+        goal_position_.coeffRef(0,3) = cur_val(5);  // l_ankle_roll
+
+        std_msgs::Float64 phase_msg;
+        phase_msg.data = phases_.at(tra_count_);
+        phase_pub_.publish(phase_msg);
 
         tra_count_++;
       }
