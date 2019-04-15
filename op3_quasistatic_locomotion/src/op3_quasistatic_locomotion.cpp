@@ -695,7 +695,7 @@ void op3_quasistatic_locomotion::initCoMTranslation(std::string legType, stepPar
   KDL::Frame pelvis_des_pose = pelvis_pose;
   pelvis_des_pose.p.data[1]+= y_val;
 
-  double transl_time = 2.0; // sec
+  double transl_time = 3.0; // sec
   int numOfSteps = int (transl_time*sp.freq);
 
   double dy = (pelvis_des_pose.p.y()-pelvis_pose.p.y())/numOfSteps;
