@@ -59,7 +59,7 @@ void op3_quasistatic_locomotion::deleteSolvers(){
 
 void op3_quasistatic_locomotion::initializeROS(){
 
-  std::string module_name = "DirectControl";
+  std::string module_name = "none";
 
   std::transform(module_name.begin(),module_name.end(),module_name.begin(), ::tolower);
   rostopic_is_init = false;
@@ -70,48 +70,33 @@ void op3_quasistatic_locomotion::initializeROS(){
     rostopic_is_init = true;
   }
   else{
-    if(module_name == "customcontrolmodule" || module_name == "customcontrol"){
-      this->setModule("custom_control_module");
-      leg_joints_pub = node.advertise<sensor_msgs::JointState>("/robotis/direct_control/set_joint_states", 0);
-      rostopic_is_init = true;
-    }
-    else{
-      if (module_name == "none"){
-        this->setModule(module_name);
 
-        std::vector<std::string> joint_name;
-        joint_name.push_back("r_hip_yaw");
-        joint_name.push_back("r_hip_roll");
-        joint_name.push_back("r_hip_pitch");
-        joint_name.push_back("r_knee");
-        joint_name.push_back("r_ank_pitch");
-        joint_name.push_back("r_ank_roll");
+    this->setModule("none");
 
-        joint_name.push_back("l_hip_yaw");
-        joint_name.push_back("l_hip_roll");
-        joint_name.push_back("l_hip_pitch");
-        joint_name.push_back("l_knee");
-        joint_name.push_back("l_ank_pitch");
-        joint_name.push_back("l_ank_roll");
+    std::vector<std::string> joint_name;
+    joint_name.push_back("r_hip_yaw");
+    joint_name.push_back("r_hip_roll");
+    joint_name.push_back("r_hip_pitch");
+    joint_name.push_back("r_knee");
+    joint_name.push_back("r_ank_pitch");
+    joint_name.push_back("r_ank_roll");
 
-        std::vector<std::string> joint_module;
-        joint_module.resize(2*JOINT_NUM);
+    joint_name.push_back("l_hip_yaw");
+    joint_name.push_back("l_hip_roll");
+    joint_name.push_back("l_hip_pitch");
+    joint_name.push_back("l_knee");
+    joint_name.push_back("l_ank_pitch");
+    joint_name.push_back("l_ank_roll");
 
-        this->getCurrentModule(joint_name, joint_module);
+    std::vector<std::string> joint_module;
+    joint_module.resize(2*JOINT_NUM);
 
-        leg_joints_pub = node.advertise<sensor_msgs::JointState>("/robotis/set_joint_states", 0);
-        //leg_joints_pub = node.advertise<sensor_msgs::JointState>("/robotis/direct_control/set_joint_states", 0);
-        rostopic_is_init = true;
-      }
-      else{
-        ROS_WARN("Wrong control module!");
-        ROS_WARN("Exit...");
-      }
-    }
+    this->getCurrentModule(joint_name, joint_module);
+
+    leg_joints_pub = node.advertise<sensor_msgs::JointState>("/robotis/set_joint_states", 0);
+    rostopic_is_init = true;
+
   }
-
-
-  //ROS_INFO("TEST03");
 
 }
 
@@ -456,19 +441,18 @@ bool op3_quasistatic_locomotion::movePelvis(KDL::Frame pelvis_des_pose, Eigen::V
 
 }
 
-
 bool op3_quasistatic_locomotion::footTrajectoryGeneration(std::vector<KDL::Frame> &foot_poses, stepParam sp, std::string legType){
 
   /// Foot translation: Frames -> Joint angles
   /// Phase duration: 0.5 * step_period
 
   int n_step = int (sp.freq*sp.step_duration*0.5);
-  up_part = 0.25;
-  down_part = 0.25; //up_part + down_part <= 1
+  up_part    = 0.25;
+  down_part  = 0.25; //up_part + down_part <= 1
 
-  int n_up = int (up_part*n_step);
+  int n_up   = int (up_part*n_step);
   int n_down = int (down_part*n_step);
-  int n_mid = n_step - (n_up + n_down);
+  int n_mid  = n_step - (n_up + n_down);
 
   double x_val = 0.0;
   double y_val = 0.0;
@@ -492,55 +476,78 @@ bool op3_quasistatic_locomotion::footTrajectoryGeneration(std::vector<KDL::Frame
 
   KDL::Frame cur_frm;
 
-  double delta_t_up = (M_PI/2)/n_up;
-  double delta_t_down = (M_PI/2)/n_down;
+  double dx = (sp.step_length/1000)/n_step;
+  double z_val = 0.0;
 
-  for(int count=0;count<n_step;count++){
+  for(int i=0; i<n_step; i++){
 
-    if(count<=n_up){
+    x_val += dx;
 
-      cur_frm = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
-                           KDL::Vector(sp.step_length*up_part*(1-cos(delta_t_up*count))/1000 +x_val,
-                                       y_val,
-                                       sp.step_clearance*sin(delta_t_up*count)/1000
-                                       )
-                           );
-
-      foot_poses.push_back(cur_frm);
-      //ROS_INFO("Step #%d x:%f, y:%f, z:%f",count,cur_frm.p.x(),cur_frm.p.y(),cur_frm.p.z());
-
+    if(i<=n_up){
+      double dz = (sp.step_clearance/1000)/n_up;
+      z_val += dz;
+    }
+    if((i>n_up+n_mid)&&(i<=n_step)){
+      double dz = (sp.step_clearance/1000)/n_down;
+      z_val -= dz;
     }
 
-    if((count>n_up)&&(count<=n_up+n_mid)){
+    cur_frm = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
+                         KDL::Vector(x_val, y_val, z_val));
 
-      cur_frm = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
-                           KDL::Vector(sp.step_length/n_step*count/1000 + x_val,
-                                       y_val,
-                                       sp.step_clearance/1000
-                                       )
-                           );
-
-      foot_poses.push_back(cur_frm);
-      //ROS_INFO("Step #%d x:%f, y:%f, z:%f",count,cur_frm.p.x(),cur_frm.p.y(),cur_frm.p.z());
-
-    }
-
-    if((count>n_up+n_mid)&&(count<=n_step)){
-
-      cur_frm = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
-                           KDL::Vector(sp.step_length*down_part*sin(delta_t_down*(count-(n_up+n_mid)))/1000 + sp.step_length/n_step*(n_up+n_mid)/1000 + x_val,
-                                       y_val,
-                                       sp.step_clearance*cos(delta_t_down*(count-(n_up+n_mid)))/1000
-                                       )
-                           );
-
-      foot_poses.push_back(cur_frm);
-      //ROS_INFO("Step #%d x:%f, y:%f, z:%f",count,cur_frm.p.x(),cur_frm.p.y(),cur_frm.p.z());
-
-    }
-
+    foot_poses.push_back(cur_frm);
 
   }
+
+  //double delta_t_up = (M_PI/2)/n_up;
+  //double delta_t_down = (M_PI/2)/n_down;
+  //
+  //for(int count=0;count<n_step;count++){
+  //
+  //  if(count<=n_up){
+  //
+  //    cur_frm = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
+  //                         KDL::Vector(sp.step_length*up_part*(1-cos(delta_t_up*count))/1000 +x_val,
+  //                                     y_val,
+  //                                     sp.step_clearance*sin(delta_t_up*count)/1000
+  //                                     )
+  //                         );
+  //
+  //    foot_poses.push_back(cur_frm);
+  //    //ROS_INFO("Step #%d x:%f, y:%f, z:%f",count,cur_frm.p.x(),cur_frm.p.y(),cur_frm.p.z());
+  //
+  //  }
+  //
+  //  if((count>n_up)&&(count<=n_up+n_mid)){
+  //
+  //    cur_frm = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
+  //                         KDL::Vector(sp.step_length/n_step*count/1000 + x_val,
+  //                                     y_val,
+  //                                     sp.step_clearance/1000
+  //                                     )
+  //                         );
+  //
+  //    foot_poses.push_back(cur_frm);
+  //    //ROS_INFO("Step #%d x:%f, y:%f, z:%f",count,cur_frm.p.x(),cur_frm.p.y(),cur_frm.p.z());
+  //
+  //  }
+  //
+  //  if((count>n_up+n_mid)&&(count<=n_step)){
+  //
+  //    cur_frm = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
+  //                         KDL::Vector(sp.step_length*down_part*sin(delta_t_down*(count-(n_up+n_mid)))/1000 + sp.step_length/n_step*(n_up+n_mid)/1000 + x_val,
+  //                                     y_val,
+  //                                     sp.step_clearance*cos(delta_t_down*(count-(n_up+n_mid)))/1000
+  //                                     )
+  //                         );
+  //
+  //    foot_poses.push_back(cur_frm);
+  //    //ROS_INFO("Step #%d x:%f, y:%f, z:%f",count,cur_frm.p.x(),cur_frm.p.y(),cur_frm.p.z());
+  //
+  //  }
+  //
+  //
+  //}
 
   return true;
 
@@ -552,7 +559,7 @@ bool op3_quasistatic_locomotion::launchManager(){
 
   manager_is_launched = true;
 
-  ros::Duration(7.5).sleep();
+  ros::Duration(3.0).sleep();
 
   return true; // TODO: error processing!
 
