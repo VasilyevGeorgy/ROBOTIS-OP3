@@ -88,6 +88,7 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
   boost::mutex tra_lock_;
 
   ros::Publisher status_msg_pub_;
+  ros::Publisher phase_pub_;
 
   const bool DEBUG;
   bool stop_process_;
@@ -118,6 +119,7 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
 
   std::vector<Eigen::VectorXd> rleg_joint_angles_;
   std::vector<Eigen::VectorXd> lleg_joint_angles_;
+  std::vector<int> phases_;
 
   void setModule(const std::string &moduleName);
   op3_quasistatic_locomotion::stepParam sp;
