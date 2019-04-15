@@ -936,14 +936,20 @@ void op3_quasistatic_locomotion::locomotion(stepParam sp){
 
 }
 
-void op3_quasistatic_locomotion::keyboardContolCallback(const std_msgs::String::ConstPtr &cntrl_status){
+void op3_quasistatic_locomotion::keyboardContolCallback(const std_msgs::Int32::ConstPtr &cntrl_status){
 
-  if(cntrl_status->data == "run")
+  enum control{
+    quit_,
+    stop_,
+    run_
+  };
+
+  if(cntrl_status->data == run_)
     keyboard_run = true;
   else
     keyboard_run = false;
 
-  if(cntrl_status->data == "quit"){
+  if(cntrl_status->data == quit_){
     keyboard_quit = true;
   }
 

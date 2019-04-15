@@ -40,19 +40,18 @@ int main (int argc, char **argv){
       msg = run_;
     else
       msg = stop_;
-
-    if(quit){
-      refresh();  // push from buffer to the real terminal
-      endwin();
-      break;
-    }
+    if(quit)
+      msg = quit_;
 
     std_msgs::Int32 control_msg;
     control_msg.data = msg;
     get_key_pub.publish(control_msg);
 
-    refresh();
+    refresh(); // push from buffer to the real terminal
     endwin();
+
+    if(quit)
+      break;
 
     char input_key=getch();
     if((input_key=='q')||(input_key=='Q')) // ESC == 27

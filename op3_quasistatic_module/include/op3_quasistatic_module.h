@@ -1,19 +1,3 @@
-/*******************************************************************************
-* Copyright 2017 ROBOTIS CO., LTD.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*******************************************************************************/
-
 #ifndef QUASISTATIC_CONTROL_MODULE_H_
 #define QUASISTATIC_CONTROL_MODULE_H_
 
@@ -24,6 +8,7 @@
 #include <ros/callback_queue.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Int32.h>
 #include <sensor_msgs/JointState.h>
 
 #include "robotis_controller_msgs/StatusMsg.h"
@@ -64,6 +49,7 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
 
   /* ROS Topic Callback Functions */
   void StepParamsCallback(const op3_online_walking_module_msgs::FootStepCommand::ConstPtr &msg);
+  void keyboardContolCallback(const std_msgs::Int32::ConstPtr &msg);
 
   void queueThread();
   void jointTraGeneThread();
@@ -98,6 +84,7 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
   bool will_be_collision_;
   int tra_count_, tra_size_;
   double moving_time_;
+  int keyboard_control;
 
   Eigen::MatrixXd target_position_;
   Eigen::MatrixXd present_position_;

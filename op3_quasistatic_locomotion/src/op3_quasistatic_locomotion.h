@@ -17,8 +17,9 @@
 #include <ros/callback_queue.h>
 #include <ros/package.h>
 #include <geometry_msgs/Pose.h>
-#include "std_msgs/Float64.h"
-#include "std_msgs/String.h"
+#include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
+#include <std_msgs/Int32.h>
 #include "sensor_msgs/JointState.h"
 #include "robotis_controller_msgs/JointCtrlModule.h"
 #include "robotis_controller_msgs/GetJointModule.h"
@@ -221,7 +222,7 @@ private:
   void footTranslation(stepParam sp, std::string legType);
   void translateCoM(std::string legType, stepParam sp);
   void publishMessageROS(Eigen::VectorXd rleg_jnt_angle_, Eigen::VectorXd lleg_jnt_angle_);
-  void keyboardContolCallback(const std_msgs::String::ConstPtr &cntrl_status);
+  void keyboardContolCallback(const std_msgs::Int32::ConstPtr &cntrl_status);
   bool getCurrentModule(std::vector<std::string> &joint_name, std::vector<std::string> &joint_module);
   void setJointModule(const std::vector<std::string> &joint_name, const std::vector<std::string> &module_name); // service call to set module
   void setLegsModule(std::string moduleName); // Module for legs joints

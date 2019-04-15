@@ -13,7 +13,8 @@ QuasistaticControlModule::QuasistaticControlModule()
     tra_count_(0),
     tra_size_(0),
     check_collision_(true),
-    DEBUG(false)
+    DEBUG(false),
+    keyboard_control(1)
 {
   enable_ = false;
   module_name_ = "quasistatic_module";
@@ -69,7 +70,10 @@ void QuasistaticControlModule::queueThread()
 
   rn.setCallbackQueue(&callback_queue);
 
-  ros::Subscriber step_params_sub = rn.subscribe("/robotis/quasistatic/step_params", 1, &QuasistaticControlModule::StepParamsCallback, this);
+  ros::Subscriber step_params_sub = rn.subscribe("/robotis/quasistatic/step_params",
+                                                 1, &QuasistaticControlModule::StepParamsCallback, this);
+  ros::Subscriber control_sub = rn.subscribe("/op3_keyboard_control",
+                                               10, &QuasistaticControlModule::keyboardContolCallback, this);
 
   ros::WallDuration duration(control_cycle_msec_ / 1000.0);
   while(rn.ok())
@@ -137,6 +141,11 @@ void QuasistaticControlModule::StepParamsCallback(const op3_online_walking_modul
 
 }
 
+void QuasistaticControlModule::keyboardContolCallback(const std_msgs::Int32::ConstPtr &msg){
+
+  keyboard_control = msg->data;
+}
+
 void QuasistaticControlModule::process(std::map<std::string, robotis_framework::Dynamixel *> dxls,
                                   std::map<std::string, double> sensors)
 {
@@ -181,7 +190,14 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
       if (tra_count_ >= tra_size_) // end of steps
         finishMoving();
       else
-      { // update goal position
+      {
+        enum k_ctrl{
+          quit_,
+          stop_,
+          run_
+        };
+
+        // update goal position
         Eigen::VectorXd cur_val = rleg_joint_angles_.at(tra_count_);
 
         goal_position_.coeffRef(0,16) = cur_val(0); // r_hip_yaw
@@ -203,7 +219,13 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
         phase_msg.data = phases_.at(tra_count_);
         phase_pub_.publish(phase_msg);
 
-        tra_count_++;
+        if(keyboard_control == run_)
+          tra_count_++;
+
+        if(keyboard_control == quit_)
+          tra_count_ = tra_size_;
+
+        //tra_count_++;
       }
     }
   }
