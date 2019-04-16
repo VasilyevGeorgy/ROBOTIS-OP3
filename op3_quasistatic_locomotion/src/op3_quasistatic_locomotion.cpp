@@ -614,7 +614,7 @@ void op3_quasistatic_locomotion::goToInitialPose(KDL::Frame pelvis_des_pose, ste
 
   //ROS_INFO("Test4");
 
-  double time = sp.step_duration; // in sec
+  double time = 3.0; // in sec
   int numOfSteps = int (sp.freq*time);
 
   double des_roll, des_pitch, des_yaw;
