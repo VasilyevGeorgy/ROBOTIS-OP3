@@ -19,6 +19,7 @@
 #include <stdio.h>
 
 #include "open_cr_module/open_cr_module.h"
+//#include "../include/open_cr_module/open_cr_module.h"
 
 namespace robotis_op
 {
@@ -37,6 +38,12 @@ OpenCRModule::OpenCRModule()
   result_["acc_x"] = 0.0;
   result_["acc_y"] = 0.0;
   result_["acc_z"] = 0.0;
+
+  result_["press_point_rl_x"] = 0.0;
+  result_["press_point_rl_y"] = 0.0;
+
+  result_["press_point_ll_x"] = 0.0;
+  result_["press_point_ll_y"] = 0.0;
 
   result_["button_mode"] = 0;
   result_["button_start"] = 0;
@@ -63,6 +70,12 @@ OpenCRModule::OpenCRModule()
   previous_result_["acc_y"] = 0.0;
   previous_result_["acc_z"] = 0.0;
 
+  previous_result_["press_point_rl_x_prev "] = 0.0;
+  previous_result_["press_point_rl_y_prev"] = 0.0;
+
+  previous_result_["press_point_ll_x_prev"] = 0.0;
+  previous_result_["press_point_ll_y_prev"] = 0.0;
+
   last_msg_time_ = ros::Time::now();
 }
 
@@ -84,11 +97,13 @@ void OpenCRModule::queueThread()
 
   ros_node.setCallbackQueue(&callback_queue);
 
-  /* publisher */
+  /* ROS publishers */
   status_msg_pub_ = ros_node.advertise<robotis_controller_msgs::StatusMsg>("/robotis/status", 1);
   imu_pub_ = ros_node.advertise<sensor_msgs::Imu>("/robotis/open_cr/imu", 1);
   button_pub_ = ros_node.advertise<std_msgs::String>("/robotis/open_cr/button", 1);
   dxl_power_msg_pub_ = ros_node.advertise<robotis_controller_msgs::SyncWriteItem>("/robotis/sync_write_item", 0);
+  press_point_rl_pub_= ros_node.advertise<geometry_msgs::PointStamped>("/robotis/fsr/press_point_right",1);
+  press_point_ll_pub_= ros_node.advertise<geometry_msgs::PointStamped>("/robotis/fsr/press_point_left",1);
 
   ros::WallDuration duration(control_cycle_msec_ / 1000.0);
   while (ros_node.ok())
@@ -115,6 +130,12 @@ void OpenCRModule::process(std::map<std::string, robotis_framework::Dynamixel *>
   result_["gyro_y"] = lowPassFilter(0.4, -getGyroValue(gyro_y), previous_result_["gyro_y"]);
   result_["gyro_z"] = lowPassFilter(0.4, getGyroValue(gyro_z), previous_result_["gyro_z"]);
 
+  result_["press_point_rl_x"] = sensors["fsr_right"]->sensor_state_->bulk_read_table_["p_fsr_x"];
+  result_["press_point_rl_y"] = sensors["fsr_right"]->sensor_state_->bulk_read_table_["p_fsr_y"];
+
+  result_["press_point_ll_x"] = sensors["fsr_left"]->sensor_state_->bulk_read_table_["p_fsr_x"];
+  result_["press_point_ll_y"] = sensors["fsr_left"]->sensor_state_->bulk_read_table_["p_fsr_y"];
+
   ROS_INFO_COND(DEBUG_PRINT, " ======================= Gyro ======================== ");
   ROS_INFO_COND(DEBUG_PRINT, "Raw : %d, %d, %d", gyro_x, gyro_y, gyro_z);
   ROS_INFO_COND(DEBUG_PRINT, "Filtered : %f, %f, %f", result_["gyro_x"], result_["gyro_y"], result_["gyro_z"]);
@@ -127,6 +148,13 @@ void OpenCRModule::process(std::map<std::string, robotis_framework::Dynamixel *>
   ROS_INFO_COND(DEBUG_PRINT, " ======================= Acc ======================== ");
   ROS_INFO_COND(DEBUG_PRINT, "Raw : %d, %d, %d", acc_x, acc_y, acc_z);
   ROS_INFO_COND(DEBUG_PRINT, "Filtered : %f, %f, %f", result_["acc_x"], result_["acc_y"], result_["acc_z"]);
+
+
+  ROS_INFO_COND(DEBUG_PRINT, " ==================== FSR right ===================== ");
+  ROS_INFO_COND(DEBUG_PRINT, "Raw : %f, %f", result_["press_point_rl_x"], result_["press_point_rl_y"]);
+
+  ROS_INFO_COND(DEBUG_PRINT, " ==================== FSR left  ===================== ");
+  ROS_INFO_COND(DEBUG_PRINT, "Raw : %f, %f", result_["press_point_ll_x"], result_["press_point_ll_y"]);
 
   ros::Time update_time;
   update_time.sec = sensors["open-cr"]->sensor_state_->update_time_stamp_.sec_;
@@ -149,9 +177,16 @@ void OpenCRModule::process(std::map<std::string, robotis_framework::Dynamixel *>
 
   publishIMU();
 
+  publishFSR();
+
   previous_result_["gyro_x_prev"] = result_["gyro_x"];
   previous_result_["gyro_y_prev"] = result_["gyro_y"];
   previous_result_["gyro_z_prev"] = result_["gyro_z"];
+
+  previous_result_["press_point_rl_x_prev"] = result_["press_point_rl_x"];
+  previous_result_["press_point_rl_y_prev"] = result_["press_point_rl_y"];
+  previous_result_["press_point_ll_x_prev"] = result_["press_point_ll_x"];
+  previous_result_["press_point_ll_y_prev"] = result_["press_point_ll_y"];
 }
 
 // -2000 ~ 2000dps(-32800 ~ 32800), scale factor : 16.4, dps -> rps
@@ -203,6 +238,28 @@ void OpenCRModule::publishIMU()
   imu_msg_.orientation.w = orientation.w();
 
   imu_pub_.publish(imu_msg_);
+}
+
+void OpenCRModule::publishFSR(){
+
+  press_point_rl_msg_.header.stamp = ros::Time::now();
+  press_point_rl_msg_.header.frame_id = "right_foot";
+
+  press_point_ll_msg_.header.stamp = ros::Time::now();
+  press_point_ll_msg_.header.frame_id = "left_foot";
+
+  press_point_rl_msg_.point.x = result_["press_point_rl_x"];
+  press_point_rl_msg_.point.y = result_["press_point_rl_y"];
+  press_point_rl_msg_.point.z = 0.0;
+
+  press_point_ll_msg_.point.x = result_["press_point_ll_x"];
+  press_point_ll_msg_.point.y = result_["press_point_ll_y"];
+  press_point_ll_msg_.point.z = 0.0;
+
+
+  press_point_rl_pub_.publish(press_point_rl_msg_);
+  press_point_ll_pub_.publish(press_point_ll_msg_);
+
 }
 
 void OpenCRModule::handleButton(const std::string &button_name)

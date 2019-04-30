@@ -23,6 +23,7 @@
 #include <ros/callback_queue.h>
 #include <std_msgs/String.h>
 #include <sensor_msgs/Imu.h>
+#include <geometry_msgs/PointStamped.h>
 #include <boost/thread.hpp>
 #include <eigen3/Eigen/Eigen>
 
@@ -58,6 +59,8 @@ class OpenCRModule : public robotis_framework::SensorModule, public robotis_fram
   double getAccValue(int raw_value);
   void publishIMU();
 
+  void publishFSR();
+
   void handleButton(const std::string &button_name);
   void publishButtonMsg(const std::string &button_name);
   void handleVoltage(double present_volt);
@@ -75,13 +78,27 @@ class OpenCRModule : public robotis_framework::SensorModule, public robotis_fram
   double previous_volt_;
   double present_volt_;
 
+  //double previous_press_point_rl_x_;
+  //double previous_press_point_rl_y_;
+  //
+  //double previous_press_point_ll_x_;
+  //double previous_press_point_ll_x_;
+
+  // ROS messages
   sensor_msgs::Imu imu_msg_;
+
+  geometry_msgs::PointStamped press_point_rl_msg_;
+  geometry_msgs::PointStamped press_point_ll_msg_;
+
 
   /* subscriber & publisher */
   ros::Publisher imu_pub_;
   ros::Publisher button_pub_;
   ros::Publisher status_msg_pub_;
   ros::Publisher dxl_power_msg_pub_;
+
+  ros::Publisher press_point_rl_pub_;
+  ros::Publisher press_point_ll_pub_;
 };
 
 }
