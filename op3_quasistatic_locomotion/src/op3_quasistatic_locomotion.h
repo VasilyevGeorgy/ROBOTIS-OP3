@@ -50,6 +50,7 @@ const int JOINT_NUM = 6;
 const double D2R_ = M_PI/180.0;
 const double R2D_ = 180.0/M_PI;
 const double y_offset = 0.035;
+const double pelvis_offset = 0.005;
 const double deg_of_precision = 2*M_PI/pow(2.0,12); // XM430 servo' degree of precision in rads
 
 //#define JOINT_NUM (6)

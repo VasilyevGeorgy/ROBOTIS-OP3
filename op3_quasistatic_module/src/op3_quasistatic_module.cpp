@@ -14,7 +14,9 @@ QuasistaticControlModule::QuasistaticControlModule()
     tra_size_(0),
     check_collision_(true),
     DEBUG(false),
-    keyboard_control(1)
+    keyboard_control(1),
+    prev_phase(0),
+    pres_phase(0)
 {
   enable_ = false;
   module_name_ = "quasistatic_module";
@@ -214,6 +216,10 @@ void QuasistaticControlModule::process(std::map<std::string, robotis_framework::
         goal_position_.coeffRef(0,8) = cur_val(3);  // l_knee_pitch
         goal_position_.coeffRef(0,2) = cur_val(4);  // l_ankle_pitch
         goal_position_.coeffRef(0,3) = cur_val(5);  // l_ankle_roll
+
+        //int pres_phase = phases_.at(tra_count_);
+        //if()
+
 
         std_msgs::Float64 phase_msg;
         phase_msg.data = phases_.at(tra_count_);

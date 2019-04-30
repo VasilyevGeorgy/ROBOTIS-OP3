@@ -85,6 +85,8 @@ class QuasistaticControlModule : public robotis_framework::MotionModule, public 
   int tra_count_, tra_size_;
   double moving_time_;
   int keyboard_control;
+  int pres_phase;
+  int prev_phase;
 
   Eigen::MatrixXd target_position_;
   Eigen::MatrixXd present_position_;

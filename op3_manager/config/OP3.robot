@@ -28,3 +28,5 @@ dynamixel | /dev/ttyUSB0 | 18  | XM-430         | 2.0      | l_ank_roll     | pr
 dynamixel | /dev/ttyUSB0 | 19  | XM-430         | 2.0      | head_pan       | present_position, position_p_gain, position_i_gain, position_d_gain
 dynamixel | /dev/ttyUSB0 | 20  | XM-430         | 2.0      | head_tilt      | present_position, position_p_gain, position_i_gain, position_d_gain
 sensor    | /dev/ttyUSB0 | 200 | OPEN-CR        | 2.0      | open-cr        | button, present_voltage, gyro_x, gyro_y, gyro_z, acc_x, acc_y, acc_z, roll, pitch, yaw
+sensor    | /dev/ttyUSB0 | 111 | FSR            | 1.0      | fsr_right      | p_fsr1_l, p_fsr1_h, p_fsr2_l, p_fsr2_h, p_fsr3_l, p_fsr3_h, p_fsr4_l, p_fsr4_h, p_fsr_x, p_fsr_y
+sensor    | /dev/ttyUSB0 | 112 | FSR            | 1.0      | fsr_left       | p_fsr1_l, p_fsr1_h, p_fsr2_l, p_fsr2_h, p_fsr3_l, p_fsr3_h, p_fsr4_l, p_fsr4_h, p_fsr_x, p_fsr_y

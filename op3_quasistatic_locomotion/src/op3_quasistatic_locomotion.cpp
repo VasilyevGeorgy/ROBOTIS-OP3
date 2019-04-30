@@ -667,11 +667,11 @@ void op3_quasistatic_locomotion::initCoMTranslation(std::string legType, stepPar
   std::transform(legType.begin(),legType.end(),legType.begin(), ::tolower);
 
   if(legType == "right"){
-    y_val = -y_offset;
+    y_val = -y_offset - pelvis_offset;
   }
   else{
     if (legType == "left"){
-      y_val = y_offset;
+      y_val = y_offset + pelvis_offset;
     }
     else{
       ROS_WARN("initCoMTranslation: INCORRECT LEG INPUT");
@@ -699,10 +699,11 @@ void op3_quasistatic_locomotion::initCoMTranslation(std::string legType, stepPar
   lleg_joint_pos_.resize(JOINT_NUM);
 
   KDL::Frame pos = pelvis_pose;
+
   KDL::Frame pelvis_des_pose = pelvis_pose;
   pelvis_des_pose.p.data[1]+= y_val;
 
-  double transl_time = 3.0; // sec
+  double transl_time = sp.step_duration*0.25; // sec
   int numOfSteps = int (transl_time*sp.freq);
 
   double dy = (pelvis_des_pose.p.y()-pelvis_pose.p.y())/numOfSteps;
@@ -807,15 +808,25 @@ void op3_quasistatic_locomotion::translateCoM(std::string legType, stepParam sp)
   std::transform(legType.begin(),legType.end(),legType.begin(), ::tolower);
 
   if (legType == "right"){
-    des_pose = pelvis_pose;                     // it actually doesn't matter, use for convinience
-    des_pose.p.data[0] = rfoot_pose.p.data[0];
-    des_pose.p.data[1] = rfoot_pose.p.data[1];
+
+    des_pose = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
+                          KDL::Vector(rfoot_pose.p.data[0], rfoot_pose.p.data[1] - pelvis_offset, pelvis_pose.p.data[2])
+                        );
+
+    //des_pose = pelvis_pose;
+    //des_pose.p.data[0] = rfoot_pose.p.data[0];
+    //des_pose.p.data[1] = rfoot_pose.p.data[1];
   }
   else{
     if (legType == "left"){
-      des_pose = pelvis_pose;
-      des_pose.p.data[0] = lfoot_pose.p.data[0];
-      des_pose.p.data[1] = lfoot_pose.p.data[1];
+
+      des_pose = KDL::Frame(KDL::Rotation::RPY(0.0, 0.0, 0.0),
+                            KDL::Vector(lfoot_pose.p.data[0], lfoot_pose.p.data[1] + pelvis_offset, pelvis_pose.p.data[2])
+                          );
+
+      //des_pose = pelvis_pose;
+      //des_pose.p.data[0] = lfoot_pose.p.data[0];
+      //des_pose.p.data[1] = lfoot_pose.p.data[1];
     }
     else{
       ROS_WARN("translateCoM: INCORRECT LEG INPUT");
