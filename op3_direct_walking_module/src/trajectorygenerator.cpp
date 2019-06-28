@@ -84,7 +84,7 @@ Eigen::Matrix3d TrajectoryGenerator::rpyToRotM(Eigen::Vector3d rpy)
   return rotationMatrix;
 }
 
-void TrajectoryGenerator::comTranslation(leg_type leg, Eigen::Matrix4d goal_pose)
+Eigen::Matrix4d TrajectoryGenerator::comTranslation(leg_type leg, Eigen::Matrix4d goal_pose)
 {
   // CoM translation wrt Base frame
   if(leg == RIGHT){
@@ -99,7 +99,7 @@ void TrajectoryGenerator::comTranslation(leg_type leg, Eigen::Matrix4d goal_pose
 
 }
 
-void TrajectoryGenerator::footTranslation(leg_type leg, Eigen::Matrix4d goal_pose)
+Eigen::Matrix4d TrajectoryGenerator::footTranslation(leg_type leg, Eigen::Matrix4d goal_pose)
 {
   // Foot translation wrt Base frame
   if(leg == RIGHT){
@@ -114,7 +114,7 @@ void TrajectoryGenerator::footTranslation(leg_type leg, Eigen::Matrix4d goal_pos
 
 }
 
-Eigen::Vector3d TrajectoryGenerator::getDeltaRPY(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose, unsigned int num_steps)
+Eigen::Vector3d TrajectoryGenerator::getDiffRPY(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose, unsigned int num_steps)
 {
   // Get Roll Pitch Yaw from init_pose-matrix
   Eigen::Matrix3d r_init;
@@ -136,12 +136,12 @@ Eigen::Vector3d TrajectoryGenerator::getDeltaRPY(Eigen::Matrix4d init_pose, Eige
 
 }
 
-Eigen::Matrix4d TrajectoryGenerator::getDeltaTransf(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose,
+Eigen::Matrix4d TrajectoryGenerator::getDiffTransf(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose,
                                                     unsigned int num_steps)
 { // Transformation matrix as a difference
 
   Eigen::Vector3d delta_rpy;
-  delta_rpy = this->getDeltaRPY(init_pose, goal_pose, num_steps);
+  delta_rpy = this->getDiffRPY(init_pose, goal_pose, num_steps);
 
   Eigen::Matrix3d delta_rot;
   delta_rot = this->rpyToRotM(delta_rpy);
@@ -163,61 +163,14 @@ Eigen::Matrix4d TrajectoryGenerator::getDeltaTransf(Eigen::Matrix4d init_pose, E
 
 }
 
-void TrajectoryGenerator::pevlisTranslation(double operating_rate, double duration, Eigen::Matrix4d goal_pose)
-{
-  unsigned int num_steps = (unsigned int) duration * operating_rate;
-
-  Eigen::Matrix3d r_init;
-  r_init = pelvis_pose.block(0,0,3,3);
-  Eigen::Vector3d rpy_init;
-  rpy_init = this->getRPY(r_init);
-
-  Eigen::Vector3d delta_rpy;
-  delta_rpy = this->getDeltaRPY(pelvis_pose, goal_pose, num_steps);
-
-  Eigen::Matrix4d delta_transf;
-  delta_transf = this->getDeltaTransf(pelvis_pose, goal_pose, num_steps);
-
-  //std::cout<<delta_transf<<std::endl<<std::endl;
-
-  Eigen::Vector3d cur_rpy;
-  cur_rpy = rpy_init;
-
-  Eigen::Matrix3d cur_rot;
-
-  Eigen::Matrix4d cur_pose;
-  cur_pose = pelvis_pose;
-
-  this->comTranslation(this->RIGHT, cur_pose);
-  this->comTranslation(this->LEFT, cur_pose);
-
-  for(unsigned int i=0; i<num_steps; i++)
-  {
-    cur_rpy += delta_rpy;
-    cur_rot = this->rpyToRotM(cur_rpy);
-
-    cur_pose << cur_rot(0,0), cur_rot(0,1), cur_rot(0,2), (cur_pose(0,3) + delta_transf(0,3)),
-                cur_rot(1,0), cur_rot(1,1), cur_rot(1,2), (cur_pose(1,3) + delta_transf(1,3)),
-                cur_rot(2,0), cur_rot(2,1), cur_rot(2,2), (cur_pose(2,3) + delta_transf(2,3)),
-                         0.0,          0.0,          0.0,                                 1.0;
-
-    this->comTranslation(this->RIGHT, cur_pose);
-    this->comTranslation(this->LEFT, cur_pose);
-
-  }
-
-  //pelvis_pose = goal_pose;
-
-}
-
-void TrajectoryGenerator::getTrajectory(leg_type leg, std::vector <Eigen::Matrix4d> &traj_vec)
-{
-  if(leg == RIGHT)
-    traj_vec.assign(rleg_traj.begin(), rleg_traj.end());
-  if(leg == LEFT)
-    traj_vec.assign(lleg_traj.begin(), lleg_traj.end());
-
-}
+//void TrajectoryGenerator::getTrajectory(leg_type leg, std::vector <Eigen::Matrix4d> &traj_vec)
+//{
+//  if(leg == RIGHT)
+//    traj_vec.assign(rleg_traj.begin(), rleg_traj.end());
+//  if(leg == LEFT)
+//    traj_vec.assign(lleg_traj.begin(), lleg_traj.end());
+//
+//}
 
 
 

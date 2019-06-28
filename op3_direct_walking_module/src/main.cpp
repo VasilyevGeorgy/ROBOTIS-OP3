@@ -5,8 +5,7 @@
 
 #include <boost/thread.hpp>
 
-#include "../include/op3_direct_walking_module/kinsolver.h"
-#include "trajectorygenerator.h"
+#include "op3_direct_walking.h"
 
 int main(int argc, char **argv)
 {
@@ -14,6 +13,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "op3_direct_walk_node");
   ros::NodeHandle n;
 
+/*
   robotis_op::KinSolver *kin_solver = new robotis_op::KinSolver();
 
   Eigen::Matrix4d pelvis_pose;
@@ -151,7 +151,6 @@ int main(int argc, char **argv)
     l_cur_jnt_pos = l_jnt_pos;
   }
 
-  */
 
   kin_solver->deleteSolver();
   delete kin_solver;
@@ -239,6 +238,7 @@ int main(int argc, char **argv)
       break;
   }
 
+*/
 
   return 0;
 }
