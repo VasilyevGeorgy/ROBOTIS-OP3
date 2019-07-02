@@ -1,5 +1,5 @@
-#ifndef TRAJECTORYGENERATOR_H
-#define TRAJECTORYGENERATOR_H
+#ifndef FRAMES_H
+#define FRAMES_H
 
 #include <eigen3/Eigen/Eigen>
 #include <eigen3/Eigen/Geometry>
@@ -11,11 +11,11 @@
 
 namespace  robotis_op{
 
-class TrajectoryGenerator
+class frames
 {
 public:
-  TrajectoryGenerator();
-  virtual ~TrajectoryGenerator();
+  frames();
+  virtual ~frames();
 
   enum leg_type{
     RIGHT,
@@ -24,13 +24,8 @@ public:
 
   void initialize(Eigen::Matrix4d pel_pose, Eigen::Matrix4d rf_pose, Eigen::Matrix4d lf_pose);
 
-  //void pevlisTranslation(double operating_rate, double duration, Eigen::Matrix4d goal_pose);
-
   Eigen::Matrix4d comTranslation(leg_type leg, Eigen::Matrix4d goal_pose);
-  Eigen::Matrix4d footTranslation(leg_type leg, Eigen::Matrix4d goal_pose);
-
-  //void generateTrajectory(double operating_rate);
-  //void getTrajectory(leg_type leg, std::vector <Eigen::Matrix4d> &traj_vec);
+  Eigen::Matrix4d footTranslation(Eigen::Matrix4d goal_pose);
 
   Eigen::Matrix4d getInverseTransform(Eigen::Matrix4d transf); // get inverse transformation matrix
   Eigen::Vector3d getRPY(Eigen::Matrix3d rot_m);
@@ -47,11 +42,8 @@ private:
   Eigen::Matrix4d rfoot_pose;
   Eigen::Matrix4d lfoot_pose;
 
-  std::vector <Eigen::Matrix4d> rleg_traj;
-  std::vector <Eigen::Matrix4d> lleg_traj;
-
 };
 
 }
 
-#endif // TRAJECTORYGENERATOR_H
+#endif // FRAMES_H

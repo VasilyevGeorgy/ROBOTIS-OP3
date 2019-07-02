@@ -36,7 +36,8 @@ public:
   bool initSolver(Eigen::Matrix4d base_pose);
   void deleteSolver();
   bool solveFK(leg_type leg, Eigen::VectorXd cur_jnt_pos, Eigen::Matrix4d &des_pose);
-  bool solveIK(leg_type leg, Eigen::VectorXd cur_jnt_pos, Eigen::Matrix4d des_pose, Eigen::VectorXd &des_jnt_pos);
+  bool solveIK(leg_type leg, Eigen::VectorXd cur_jnt_pos, Eigen::Matrix4d des_pose,
+               Eigen::VectorXd &des_jnt_pos);
 
 private:
   void initChains(KDL::Frame pelvis_frame);

@@ -138,8 +138,9 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
  add_executable(${PROJECT_NAME} src/main.cpp
                                 src/kinsolver.cpp
-                                src/trajectorygenerator.cpp
-                                src/op3_direct_walking.cpp)
+                                src/frames.cpp
+                                src/op3_direct_walking.cpp
+                                src/op3_zmp_walk.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

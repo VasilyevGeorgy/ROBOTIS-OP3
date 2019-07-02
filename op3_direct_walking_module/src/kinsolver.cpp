@@ -9,7 +9,8 @@ KinSolver::KinSolver()
   lleg_min_pos_limit.resize(JOINT_NUM);
   lleg_max_pos_limit.resize(JOINT_NUM);
 
-  for (int i=0; i < JOINT_NUM; i++){
+  for (int i=0; i < JOINT_NUM; i++)
+  {
     rleg_min_pos_limit(i) = 0.0;
     rleg_max_pos_limit(i) = 0.0;
 
