@@ -75,14 +75,16 @@ void op3_direct_walking::movePelvis(double operating_rate, double duration, Eige
   Eigen::VectorXd r_jnt_pos(JOINT_NUM);
   Eigen::VectorXd l_jnt_pos(JOINT_NUM);
 
-  rleg_traj.push_back(frames->comTranslation(frames->RIGHT, cur_pose));
-  lleg_traj.push_back(frames->comTranslation(frames->LEFT, cur_pose));
+  //rleg_traj.push_back(frames->comTranslation(frames->RIGHT, cur_pose));
+  //lleg_traj.push_back(frames->comTranslation(frames->LEFT, cur_pose));
 
-  kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos, rleg_traj.back(), r_jnt_pos);
+  kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos,
+                      frames->comTranslation(frames->RIGHT, cur_pose), r_jnt_pos);
   rleg_ang.push_back(r_jnt_pos);
   rleg_cur_jnt_pos = r_jnt_pos;
 
-  kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos, lleg_traj.back(), l_jnt_pos);
+  kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos,
+                      frames->comTranslation(frames->LEFT, cur_pose), l_jnt_pos);
   lleg_ang.push_back(l_jnt_pos);
   lleg_cur_jnt_pos = l_jnt_pos;
 
@@ -96,14 +98,16 @@ void op3_direct_walking::movePelvis(double operating_rate, double duration, Eige
                 cur_rot(2,0), cur_rot(2,1), cur_rot(2,2), (cur_pose(2,3) + delta_transf(2,3)),
                          0.0,          0.0,          0.0,                                 1.0;
 
-    rleg_traj.push_back(frames->comTranslation(frames->RIGHT, cur_pose));
-    lleg_traj.push_back(frames->comTranslation(frames->LEFT, cur_pose));
+    //rleg_traj.push_back(frames->comTranslation(frames->RIGHT, cur_pose));
+    //lleg_traj.push_back(frames->comTranslation(frames->LEFT, cur_pose));
 
-    kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos, rleg_traj.back(), r_jnt_pos);
+    kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos,
+                        frames->comTranslation(frames->RIGHT, cur_pose), r_jnt_pos);
     rleg_ang.push_back(r_jnt_pos);
     rleg_cur_jnt_pos = r_jnt_pos;
 
-    kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos, lleg_traj.back(), l_jnt_pos);
+    kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos,
+                        frames->comTranslation(frames->LEFT, cur_pose), l_jnt_pos);
     lleg_ang.push_back(l_jnt_pos);
     lleg_cur_jnt_pos = l_jnt_pos;
 
@@ -176,8 +180,9 @@ void op3_direct_walking::moveFoot(leg_type leg, double operating_rate, double du
 
   if(leg == RIGHT)
   {
-    rleg_traj.push_back(frames->footTranslation(cur_pose));
-    kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos, rleg_traj.back(), des_jnt_pos);
+    //rleg_traj.push_back(frames->footTranslation(cur_pose));
+    kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos,
+                       frames->comTranslation(frames->RIGHT, cur_pose), des_jnt_pos);
     rleg_ang.push_back(des_jnt_pos);
     rleg_cur_jnt_pos = des_jnt_pos;
 
@@ -185,8 +190,9 @@ void op3_direct_walking::moveFoot(leg_type leg, double operating_rate, double du
   }
   if(leg == LEFT)
   {
-    lleg_traj.push_back(frames->footTranslation(cur_pose));
-    kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos, lleg_traj.back(), des_jnt_pos);
+    //lleg_traj.push_back(frames->footTranslation(cur_pose));
+    kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos,
+                        frames->comTranslation(frames->LEFT, cur_pose), des_jnt_pos);
     lleg_ang.push_back(des_jnt_pos);
     lleg_cur_jnt_pos = des_jnt_pos;
 
@@ -207,8 +213,9 @@ void op3_direct_walking::moveFoot(leg_type leg, double operating_rate, double du
 
     if(leg == RIGHT)
     {
-      rleg_traj.push_back(frames->footTranslation(cur_pose));
-      kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos, rleg_traj.back(), des_jnt_pos);
+      //rleg_traj.push_back(frames->footTranslation(cur_pose));
+      kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos,
+                          frames->comTranslation(frames->RIGHT, cur_pose), des_jnt_pos);
       rleg_ang.push_back(des_jnt_pos);
       rleg_cur_jnt_pos = des_jnt_pos;
 
@@ -216,8 +223,9 @@ void op3_direct_walking::moveFoot(leg_type leg, double operating_rate, double du
     }
     if(leg == LEFT)
     {
-      lleg_traj.push_back(frames->footTranslation(cur_pose));
-      kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos, lleg_traj.back(), des_jnt_pos);
+      //lleg_traj.push_back(frames->footTranslation(cur_pose));
+      kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos,
+                          frames->comTranslation(frames->LEFT, cur_pose), des_jnt_pos);
       lleg_ang.push_back(des_jnt_pos);
       lleg_cur_jnt_pos = des_jnt_pos;
 

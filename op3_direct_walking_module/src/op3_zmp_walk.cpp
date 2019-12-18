@@ -19,13 +19,8 @@ op3_zmp_walk::~op3_zmp_walk()
 
 }
 
-void op3_zmp_walk::simpleQuasistatic(leg_type init_leg, double step_lenth, double step_height,
-                                     double step_duration, unsigned int num_step)
+void op3_zmp_walk::goToInitialPose(leg_type init_leg)
 {
-  num_steps = num_step;
-  if(num_steps == 0)
-    return;
-
   //Initialization
   Eigen::Matrix4d pelvis_pose;
   pelvis_pose << 1.0, 0.0, 0.0, 0.0,
@@ -60,11 +55,24 @@ void op3_zmp_walk::simpleQuasistatic(leg_type init_leg, double step_lenth, doubl
   if(init_leg == LEFT)
     goal_pose(1,3) =-YOFFSET;
 
+  std::cout<<"test0"<<rfoot_pose<<std::endl;
+
   this->movePelvis(rate, 3.0, goal_pose, rl_init_step_vec, ll_init_step_vec);
+}
+
+void op3_zmp_walk::simpleQuasistatic(leg_type init_leg, double step_lenth, double step_height,
+                                     double step_duration, unsigned int num_step)
+{
+  num_steps = num_step;
+  if(num_steps == 0)
+    return;
+
+  this->goToInitialPose(init_leg);
 
   //this->getDelay(rate, 1.0);
 
   //Initial step
+  Eigen::Matrix4d goal_pose;
   goal_pose << 1.0,  0.0,  0.0, step_lenth * 0.25,
                0.0,  1.0,  0.0, 0.0,
                0.0,  0.0,  1.0, step_height,
@@ -208,6 +216,135 @@ void op3_zmp_walk::simpleQuasistatic(leg_type init_leg, double step_lenth, doubl
   //  this->movePelvis(rate, step_duration * 0.25, goal_pose, rl_fin_step_vec, ll_fin_step_vec);
   //
   //}
+
+
+}
+
+void op3_zmp_walk::makeStep(leg_type leg, double step_lenth, double step_height, double step_duration,
+                            Eigen::Matrix3d orientation)
+{
+  unsigned int num_steps = (unsigned int) step_duration * rate;
+
+  robotis_op::frames *frames = new robotis_op::frames();
+  robotis_op::KinSolver *kin_solver = new robotis_op::KinSolver();
+
+  frames->initialize(pelvis_pose, rfoot_pose, lfoot_pose);
+  kin_solver->initSolver(pelvis_pose);
+
+  Eigen::Matrix3d r_init;
+  Eigen::Vector3d rpy_init;
+  // Posititon and rotation differences
+  Eigen::Vector3d delta_rpy;
+
+  // Reach desired orientation in the middle of step
+  if(leg == RIGHT)
+  {
+    r_init = rfoot_pose.block(0,0,3,3);
+    rpy_init = frames->getRPY(r_init);
+    delta_rpy = frames->getDiffRPY(r_init, orientation, num_steps * 0.5);
+  }
+  else
+  {
+    if(leg == LEFT){
+      r_init = lfoot_pose.block(0,0,3,3);
+      rpy_init = frames->getRPY(r_init);
+      delta_rpy = frames->getDiffRPY(r_init, orientation, num_steps * 0.5);
+    }
+    else
+    {
+      return;
+    }
+  }
+
+  std::cout<<"test1"<<rfoot_pose<<std::endl;
+  //std::cout<<delta_rpy<<std::endl;
+
+  // Current pose & rotation matrices initialization
+  Eigen::Vector3d cur_rpy;
+  cur_rpy = rpy_init;
+  Eigen::Matrix4d cur_pose;
+  Eigen::Matrix3d cur_rot;
+
+  if(leg == RIGHT)
+    cur_pose = rfoot_pose;
+  if(leg == LEFT)
+    cur_pose = lfoot_pose;
+
+  // IK solver variables
+  Eigen::VectorXd des_jnt_pos(JOINT_NUM);
+
+  if(leg == RIGHT)
+  {
+    kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos, frames->footTranslation(cur_pose), des_jnt_pos);
+    rl_init_step_vec.push_back(des_jnt_pos);
+    rleg_cur_jnt_pos = des_jnt_pos;
+
+    ll_init_step_vec.push_back(lleg_cur_jnt_pos);
+  }
+  if(leg == LEFT)
+  {
+    kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos, frames->footTranslation(cur_pose), des_jnt_pos);
+    ll_init_step_vec.push_back(des_jnt_pos);
+    lleg_cur_jnt_pos = des_jnt_pos;
+
+    rl_init_step_vec.push_back(rleg_cur_jnt_pos);
+  }
+
+  // main loop
+  for(unsigned int i=0; i<num_steps; i++)
+  {
+    cur_rpy += delta_rpy;
+    cur_rot = frames->rpyToRotM(cur_rpy);
+
+    cur_pose << cur_rot(0,0), cur_rot(0,1), cur_rot(0,2),    step_lenth/2*(1 - cos(M_PI*i/num_steps)),
+                cur_rot(1,0), cur_rot(1,1), cur_rot(1,2),                               cur_pose(1,3),
+                cur_rot(2,0), cur_rot(2,1), cur_rot(2,2), step_height/2*(1 - cos(2*M_PI*i/num_steps)),
+                         0.0,          0.0,          0.0,                                         1.0;
+
+    //std::cout<<frames->footTranslation(cur_pose)<<std::endl;
+
+    if(leg == RIGHT)
+    {
+      kin_solver->solveIK(kin_solver->RIGHT, rleg_cur_jnt_pos, frames->footTranslation(cur_pose), des_jnt_pos);
+      rl_init_step_vec.push_back(des_jnt_pos);
+      rleg_cur_jnt_pos = des_jnt_pos;
+
+      ll_init_step_vec.push_back(lleg_cur_jnt_pos);
+    }
+    if(leg == LEFT)
+    {
+      kin_solver->solveIK(kin_solver->LEFT, lleg_cur_jnt_pos, frames->footTranslation(cur_pose), des_jnt_pos);
+      ll_init_step_vec.push_back(des_jnt_pos);
+      lleg_cur_jnt_pos = des_jnt_pos;
+
+      rl_init_step_vec.push_back(rleg_cur_jnt_pos);
+    }
+  }
+
+  //Rewrite foot pose
+  if(leg == RIGHT)
+    rfoot_pose = cur_pose;
+  if(leg == LEFT)
+    lfoot_pose = cur_pose;
+
+  kin_solver->deleteSolver();
+  delete kin_solver;
+  delete frames;
+}
+
+void op3_zmp_walk::zmpWalk(leg_type init_leg, double step_lenth, double step_height,
+                           double step_duration, unsigned int num_step)
+{
+  num_steps = num_step;
+  if(num_steps == 0)
+    return;
+
+  this->goToInitialPose(init_leg);
+
+  Eigen::Matrix3d orient;
+  orient = Eigen::MatrixXd::Identity(3,3);
+
+  this->makeStep(init_leg, step_lenth, step_height, step_duration, orient);
 
 
 }

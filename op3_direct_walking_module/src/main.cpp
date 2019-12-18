@@ -15,7 +15,8 @@ int main(int argc, char **argv)
 
   robotis_op::op3_zmp_walk *walk = new robotis_op::op3_zmp_walk();
 
-  walk->simpleQuasistatic(walk->RIGHT, 0.03, 0.04, 10.0, 3);
+  //walk->simpleQuasistatic(walk->RIGHT, 0.03, 0.04, 10.0, 3);
+  walk->zmpWalk(walk->RIGHT, 0.03, 0.04, 10.0, 1);
 
   double rate = walk->getRate();
 
@@ -49,7 +50,7 @@ int main(int argc, char **argv)
   ros::Publisher r_ank_roll_pub  = n.advertise<std_msgs::Float64>("/robotis_op3/r_ank_roll_position/command", 1);
   ros::Publisher l_ank_roll_pub  = n.advertise<std_msgs::Float64>("/robotis_op3/l_ank_roll_position/command", 1);
 
-  ros::Rate loop_rate(rate);
+  ros::Rate loop_rate(rate/2);
   int count = 0;
 
   std::vector <std_msgs::Float64> msgs_vector;

@@ -93,7 +93,8 @@ Eigen::Matrix4d frames::footTranslation(Eigen::Matrix4d goal_pose)
 
 }
 
-Eigen::Vector3d frames::getDiffRPY(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose, unsigned int num_steps)
+Eigen::Vector3d frames::getDiffRPY(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose,
+                                   unsigned int num_steps)
 {
   // Get Roll Pitch Yaw from init_pose-matrix
   Eigen::Matrix3d r_init;
@@ -114,6 +115,23 @@ Eigen::Vector3d frames::getDiffRPY(Eigen::Matrix4d init_pose, Eigen::Matrix4d go
   return delta_rpy;
 
 }
+
+Eigen::Vector3d frames::getDiffRPY(Eigen::Matrix3d init_orientation, Eigen::Matrix3d goal_orientation,
+                                   unsigned int num_steps)
+{
+  Eigen::Vector3d rpy_init;
+  rpy_init = this->getRPY(init_orientation);
+
+  Eigen::Vector3d rpy_goal;
+  rpy_goal = this->getRPY(goal_orientation);
+
+  // Get differences for RPY
+  Eigen::Vector3d delta_rpy;
+  delta_rpy = (rpy_goal - rpy_init)/num_steps;
+
+  return delta_rpy;
+}
+
 
 Eigen::Matrix4d frames::getDiffTransf(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose,
                                                     unsigned int num_steps)

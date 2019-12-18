@@ -294,7 +294,7 @@ bool KinSolver::solveIK(leg_type leg, Eigen::VectorXd cur_jnt_pos,
     ik_error = rleg_ik_pos_solver->CartToJnt(cur_joint_pos_, des_frame_, des_joint_pos_);
 
     if(ik_error!=0){
-      std::cout<<"RIGHT LEG IK ERROR: "<<rleg_ik_pos_solver->strError(ik_error)<<std::endl;
+      //std::cout<<"RIGHT LEG IK ERROR: "<<rleg_ik_pos_solver->strError(ik_error)<<std::endl;
       return false;
     }
   }
@@ -304,12 +304,12 @@ bool KinSolver::solveIK(leg_type leg, Eigen::VectorXd cur_jnt_pos,
       ik_error = lleg_ik_pos_solver->CartToJnt(cur_joint_pos_, des_frame_, des_joint_pos_);
 
       if(ik_error!=0){
-        std::cout<<"LEFT LEG IK ERROR: "<<lleg_ik_pos_solver->strError(ik_error)<<std::endl;
+        //std::cout<<"LEFT LEG IK ERROR: "<<lleg_ik_pos_solver->strError(ik_error)<<std::endl;
         return false;
       }
     }
     else{
-      std::cout<<"IK ERROR: wrong leg variable was declared"<<std::endl;
+      //std::cout<<"IK ERROR: wrong leg variable was declared"<<std::endl;
       return false;
     }
   }

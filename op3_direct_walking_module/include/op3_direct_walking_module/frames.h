@@ -33,6 +33,8 @@ public:
   Eigen::Matrix3d rpyToRotM(Eigen::Vector3d rpy);
   Eigen::Matrix4d getDiffTransf(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose, unsigned int num_steps);
   Eigen::Vector3d getDiffRPY(Eigen::Matrix4d init_pose, Eigen::Matrix4d goal_pose, unsigned int num_steps);
+  Eigen::Vector3d getDiffRPY(Eigen::Matrix3d init_orientation, Eigen::Matrix3d goal_orientation,
+                             unsigned int num_steps);
 
 private:
 

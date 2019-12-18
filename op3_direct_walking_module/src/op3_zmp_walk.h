@@ -14,12 +14,19 @@ public:
   void simpleQuasistatic(leg_type init_leg, double step_lenth, double step_height,
                          double step_duration, unsigned int num_step);
 
+  void zmpWalk(leg_type init_leg, double step_lenth, double step_height,
+                         double step_duration, unsigned int num_step);
+
   void getAnglesVectors(std::vector <Eigen::VectorXd> &rl_vec,
                         std::vector <Eigen::VectorXd> &ll_vec);
 
   double getRate();
 
 private:
+  void goToInitialPose(leg_type init_leg);
+  void makeStep(leg_type leg, double step_lenth, double step_height, double step_duration,
+                Eigen::Matrix3d orientation);
+
   double rate; // control rate
   unsigned int num_steps;
 
@@ -27,8 +34,8 @@ private:
   Eigen::Matrix4d rfoot_pose;
   Eigen::Matrix4d lfoot_pose;
 
-  std::vector <Eigen::Matrix4d> rleg_traj;
-  std::vector <Eigen::Matrix4d> lleg_traj;
+  //std::vector <Eigen::Matrix4d> rleg_traj;
+  //std::vector <Eigen::Matrix4d> lleg_traj;
 
   Eigen::VectorXd rleg_cur_jnt_pos;
   Eigen::VectorXd lleg_cur_jnt_pos;
